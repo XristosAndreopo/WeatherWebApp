@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h2>Find Weather by Location</h2>
+
+<!-- Weather Search Form -->
+<form method="get" action="">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="city" class="form-label">City:</label>
+        <input type="text" id="city" name="city" class="form-control" placeholder="e.g. London" required value="{{ request.GET.city }}">
+    </div>
+    <div class="mb-3">
+        <label for="country" class="form-label">Country (optional, 2-letter code):</label>
+        <input type="text" id="country" name="country" class="form-control" placeholder="e.g. GB" value="{{ request.GET.country }}">
+        <div class="form-text">Use the ISO 2-letter country code, e.g., GB for United Kingdom, US for United States, etc.</div>
+    </div>
+    <button type="submit" class="btn btn-primary">Find Weather</button>
+</form>
+
+<!-- Display Weather Results if found -->
+{% if weather %}
+    <hr>
+    <h4>Forecast for {{ city_display }}</h4>
+    <!-- SLIDER: Let user pick how many days to show -->
+    <div class="mb-4">
+        <label for="daySlider" class="form-label">
+            Days to show:
+            <span id="sliderValue">{{ weather|length }}</span>
+        </label>
+        <input type="range" class="form-range" min="1" max="{{ weather|length }}" value="{{ weather|length }}" id="daySlider">
+    </div>
+    <div class="row" id="forecastCards">
+        {% for day in weather %}
+        <div class="col-md-3 mb-3 forecast-day" data-day="{{ forloop.counter }}">
+            <div class="card text-center">
+                <div class="card-body">
+                    {% if day.error %}
+                        <div class="text-danger">{{ day.error }}</div>
+                    {% else %}
+                        <strong>{{ day.date }}</strong><br>
+                        <img src="{% static 'weather_icons/' %}{{ day.icon }}" alt="{{ day.description }}" width="48" height="48"><br>
+                        <div>{{ day.description|capfirst }}</div>
+                        <div>Temp: {{ day.temp }}&deg;C</div>
+                        <div>Humidity: {{ day.humidity }}%</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <!-- Add to Favorites button for logged-in users -->
+    {% if user.is_authenticated and city_display %}
+        <form method="post" action="{% url 'add_favorite' %}">
+            {% csrf_token %}
+            <input type="hidden" name="city" value="{{ city_display }}">
+            <input type="hidden" name="country" value="{{ request.GET.country }}">
+            <button type="submit" class="btn btn-outline-success">Add to Favorites</button>
+        </form>
+    {% endif %}
+
+    <script>
+    // JavaScript to handle the slider and show/hide cards
+    document.addEventListener("DOMContentLoaded", function() {
+        const slider = document.getElementById('daySlider');
+        const valueLabel = document.getElementById('sliderValue');
+        const cards = document.querySelectorAll('.forecast-day');
+        slider.addEventListener('input', function() {
+            const n = parseInt(slider.value);
+            valueLabel.textContent = n;
+            cards.forEach(function(card, i) {
+                if (i < n) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+        // Trigger once at load to ensure correct state
+        slider.dispatchEvent(new Event('input'));
+    });
+    </script>
+{% elif searched %}
+    <!-- Show API or custom error message if search attempted but no data found -->
+    <div class="alert alert-warning mt-3">
+        {% if error_message %}
+            {{ error_message|capfirst }}
+        {% else %}
+            No weather data found. Please check the city name and country code.
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}
