@@ -6,26 +6,38 @@
         <div class="card-body">
             <h2 class="card-title mb-3">Contact</h2>
             <p>
-                Want to get in touch, report a bug, or suggest a feature?<br>
-                Just send an email or find me online:
+                Want to get in touch, report a bug, or suggest a feature?
             </p>
-            <ul>
-                <li>
-                    <strong>Email:</strong>
-                    <a href="xristos.andreo@gmail.com">xristos.andreopo@email.com</a>
-                </li>
-                <li>
-                    <strong>GitHub:</strong>
-                    <a href="https://github.com/XristosAndreopo" target="_blank">XristosAndreopo</a>
-                </li>
-                <li>
-                    <strong>LinkedIn:</strong>
-                    <a href="https://www.linkedin.com/in/christos-andreopoulos-3b6302372/" target="_blank">Christos Andreopoulos</a>
-                </li>
-            </ul>
+            <p>
+                Fill out the form below! I'll get back to you as soon as possible.
+            </p>
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-success">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            <form method="post" action="">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="name" class="form-label">Your Name:</label>
+                    <input type="text" class="form-control" id="name" name="name" required maxlength="100" value="{{ request.POST.name }}">
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Your Email:</label>
+                    <input type="email" class="form-control" id="email" name="email" required maxlength="120" value="{{ request.POST.email }}">
+                </div>
+                <div class="mb-3">
+                    <label for="message" class="form-label">Message:</label>
+                    <textarea class="form-control" id="message" name="message" rows="5" required maxlength="1500">{{ request.POST.message }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Send Message</button>
+            </form>
             <hr>
             <p class="text-muted small">
-                This is a personal project for educational and demonstration purposes.
+                This is a personal project for educational and demonstration purposes.<br>
+                You can also find me on
+                <a href="https://github.com/XristosAndreopo" target="_blank">GitHub</a> or
+                <a href="https://www.linkedin.com/in/christos-andreopoulos-3b6302372/" target="_blank">LinkedIn</a>.
             </p>
         </div>
     </div>

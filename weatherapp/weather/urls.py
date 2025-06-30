@@ -5,7 +5,7 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),  # Dashboard
-    path('settings/', views.settings, name='settings'),
+    path('settings/', views.settings_view, name='settings'),
     path('find/', views.find_location, name='find_location'),
     path('add_favorite/', views.add_favorite, name='add_favorite'),
     path('favorites/', views.favorites, name='favorites'),

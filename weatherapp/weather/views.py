@@ -7,6 +7,8 @@ from .models import FavoriteLocation
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from django.core.mail import send_mail
+from django.conf import settings
 
 # Weather icon mapping helper - define ONCE and use everywhere
 def get_icon_for_description(description):
@@ -36,7 +38,7 @@ def home(request):
     """Dashboard/home page."""
     return render(request, 'weather/home.html')
 
-def settings(request):
+def settings_view(request):
     """User settings page."""
     return render(request, 'weather/settings.html')
 
@@ -346,3 +348,23 @@ def map_weather_data(request):
         })
     except Exception as e:
         return JsonResponse({'error': str(e)})
+
+def contact(request):
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        email = request.POST.get("email", "").strip()
+        message_text = request.POST.get("message", "").strip()
+        if name and email and message_text:
+            # Send email (you need to set up Django email backend)
+            send_mail(
+                f"WeatherWebApp Contact from {name}",
+                f"Name: {name}\nEmail: {email}\n\n{message_text}",
+                settings.DEFAULT_FROM_EMAIL,
+                ['xristos.andreopo@gmail.com'],  # Your email here
+                fail_silently=False,
+            )
+            messages.success(request, "Your message has been sent! Thank you for contacting me.")
+            return redirect('contact')
+        else:
+            messages.error(request, "Please fill in all fields.")
+    return render(request, 'weather/contact.html')

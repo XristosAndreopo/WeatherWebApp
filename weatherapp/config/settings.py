@@ -128,3 +128,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/login/'
 
 OPENWEATHER_API_KEY="11742b368f7333908e02de4245144cb1"
+
+DEFAULT_FROM_EMAIL = 'xristos.andreopo@gmail.com'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For dev, prints email to console
