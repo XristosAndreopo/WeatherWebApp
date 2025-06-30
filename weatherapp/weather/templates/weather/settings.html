@@ -5,14 +5,23 @@
         <div class="card-body">
             <h2 class="card-title mb-3">Settings</h2>
             <ul class="list-group list-group-flush mb-4">
+                <!-- Notifications (still coming soon) -->
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-bell me-2"></i>Notifications</span>
                     <span class="badge bg-secondary">Coming soon</span>
                 </li>
+                <!-- Theme switcher (now interactive!) -->
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-palette me-2"></i>Theme</span>
-                    <span class="badge bg-secondary">Coming soon</span>
+                    <span>
+                        <select id="themeSelect" class="form-select form-select-sm d-inline w-auto">
+                            <option value="light">🌞 Light</option>
+                            <option value="dark">🌚 Dark</option>
+                        </select>
+                        <button id="applyTheme" class="btn btn-outline-primary btn-sm ms-2">Apply</button>
+                    </span>
                 </li>
+                <!-- Password/Security (still coming soon) -->
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-lock me-2"></i>Password/Security</span>
                     <span class="badge bg-secondary">Coming soon</span>
@@ -23,3 +32,4 @@
     </div>
 </div>
 {% endblock %}
+

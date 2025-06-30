@@ -2,54 +2,57 @@
 {% load static %}
 
 {% block content %}
-<h2>Your Favorite Locations</h2>
-{% if favorite_weather %}
+<section class="container my-5">
+  <h2>Your Favorite Locations</h2>
+
+  {% if favorite_weather %}
     <div class="row">
-    {% for fav in favorite_weather %}
+      {% for fav in favorite_weather %}
         <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span><strong>{{ fav.city }}</strong>{% if fav.country %}, {{ fav.country }}{% endif %}</span>
-                    <form method="post" action="{% url 'remove_favorite' fav.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-danger">Remove</button>
-                    </form>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col">
-                            <strong>Today</strong><br>
-                            {% if fav.today.error %}
-                                <span class="text-danger">{{ fav.today.error }}</span>
-                            {% elif fav.today.icon and fav.today.temp and fav.today.humidity %}
-                                <div><small>{{ fav.today.date }}</small></div>
-                                <img src="{% static 'weather_icons/' %}{{ fav.today.icon }}" alt="{{ fav.today.description }}" width="48" height="48"><br>
-                                {{ fav.today.description|capfirst }}<br>
-                                Temp: {{ fav.today.temp }}&deg;C<br>
-                                Humidity: {{ fav.today.humidity }}%
-                            {% else %}
-                                <div class="text-muted">No forecast data for today.</div>
-                            {% endif %}
-                        </div>
-                        <div class="col">
-                            <strong>Tomorrow</strong><br>
-                            {% if fav.tomorrow.error %}
-                                <span class="text-danger">{{ fav.tomorrow.error }}</span>
-                            {% else %}
-                                <div><small>{{ fav.tomorrow.date }}</small></div>
-                                <img src="{% static 'weather_icons/' %}{{ fav.tomorrow.icon }}" alt="{{ fav.tomorrow.description }}" width="48" height="48"><br>
-                                {{ fav.tomorrow.description|capfirst }}<br>
-                                Temp: {{ fav.tomorrow.temp }}&deg;C<br>
-                                Humidity: {{ fav.tomorrow.humidity }}%
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span><strong>{{ fav.city }}</strong>{% if fav.country %}, {{ fav.country }}{% endif %}</span>
+              <form method="post" action="{% url 'remove_favorite' fav.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+              </form>
             </div>
+            <div class="card-body">
+              <div class="row text-center">
+                <div class="col">
+                  <strong>Today</strong><br>
+                  {% if fav.today.error %}
+                    <span class="text-danger">{{ fav.today.error }}</span>
+                  {% else %}
+                    <div><small>{{ fav.today.date }}</small></div>
+                    <img src="{% static 'img/weather_icons/' %}{{ fav.today.icon }}"
+                         alt="{{ fav.today.description }}" width="48" height="48"><br>
+                    {{ fav.today.description|capfirst }}<br>
+                    Temp: {{ fav.today.temp }}&deg;C<br>
+                    Humidity: {{ fav.today.humidity }}%
+                  {% endif %}
+                </div>
+                <div class="col">
+                  <strong>Tomorrow</strong><br>
+                  {% if fav.tomorrow.error %}
+                    <span class="text-danger">{{ fav.tomorrow.error }}</span>
+                  {% else %}
+                    <div><small>{{ fav.tomorrow.date }}</small></div>
+                    <img src="{% static 'img/weather_icons/' %}{{ fav.tomorrow.icon }}"
+                         alt="{{ fav.tomorrow.description }}" width="48" height="48"><br>
+                    {{ fav.tomorrow.description|capfirst }}<br>
+                    Temp: {{ fav.tomorrow.temp }}&deg;C<br>
+                    Humidity: {{ fav.tomorrow.humidity }}%
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-    {% endfor %}
+      {% endfor %}
     </div>
-{% else %}
+  {% else %}
     <p>You have no favorite locations yet.</p>
-{% endif %}
+  {% endif %}
+</section>
 {% endblock %}

@@ -2,128 +2,22 @@
 {% load static %}
 
 {% block content %}
-    <h2>Interactive Weather Map</h2>
-    <div class="mb-3">
-        <label for="locationSearch" class="form-label">Search location (city, country):</label>
-        <input type="text" class="form-control" id="locationSearch" placeholder="e.g. London, GB">
-        <button id="searchBtn" class="btn btn-primary mt-2">Search</button>
+<section class="container my-5">
+  <h2>Interactive Weather Map</h2>
+
+  <div class="mb-3 row g-2">
+    <div class="col-md-8">
+      <input type="text" id="locationSearch" class="form-control"
+             placeholder="e.g. London, GB">
     </div>
-    <div id="map" style="height: 400px; width: 100%;"></div>
-    <div class="mt-4" id="weatherResult"></div>
-    <div id="addFavoriteBtn"></div>
+    <div class="col-md-4">
+      <button id="searchBtn" class="btn btn-primary w-100">Search</button>
+    </div>
+  </div>
 
-{% endblock %}
+  <div id="map" style="height:400px;"></div>
 
-{% block extra_js %}
-<script>
-// Map setup
-var map = L.map('map').setView([51.505, -0.09], 4); // Default: London
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-}).addTo(map);
-
-var marker = L.marker([51.505, -0.09], {draggable:true}).addTo(map);
-
-// Try to get user location
-if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(function(pos) {
-        var lat = pos.coords.latitude;
-        var lng = pos.coords.longitude;
-        map.setView([lat, lng], 8);
-        marker.setLatLng([lat, lng]);
-        fetchWeather(lat, lng);
-    });
-}
-
-// On map click, move marker and fetch weather
-map.on('click', function(e) {
-    marker.setLatLng(e.latlng);
-    fetchWeather(e.latlng.lat, e.latlng.lng);
-});
-
-// On marker dragend, fetch weather
-marker.on('dragend', function(e) {
-    var latlng = marker.getLatLng();
-    fetchWeather(latlng.lat, latlng.lng);
-});
-
-// Search for city/location
-document.getElementById('searchBtn').onclick = function() {
-    var query = document.getElementById('locationSearch').value.trim();
-    if (!query) return;
-    fetch("https://nominatim.openstreetmap.org/search?format=json&q=" + encodeURIComponent(query))
-        .then(resp => resp.json())
-        .then(data => {
-            if (data.length) {
-                var lat = parseFloat(data[0].lat);
-                var lng = parseFloat(data[0].lon);
-                map.setView([lat, lng], 8);
-                marker.setLatLng([lat, lng]);
-                fetchWeather(lat, lng);
-            } else {
-                alert("Location not found.");
-            }
-        });
-};
-
-// Fetch weather from backend (by lat/lng)
-function fetchWeather(lat, lng) {
-    fetch("{% url 'map_weather_data' %}?lat=" + lat + "&lng=" + lng)
-        .then(resp => resp.json())
-        .then(data => {
-            var container = document.getElementById('weatherResult');
-            var favBtn = document.getElementById('addFavoriteBtn');
-            if (data.error) {
-                container.innerHTML = '<div class="alert alert-warning">' + data.error + '</div>';
-                favBtn.innerHTML = "";
-                return;
-            }
-            var html = `
-                <h4>Forecast for ${data.location}</h4>
-                <div class="row">
-                    ${data.forecast.map(day => `
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    ${
-                                        day.error
-                                        ? `<div class="text-danger">${day.error}</div>`
-                                        : `
-                                            <strong>${day.date}</strong><br>
-                                            <img src="{% static 'weather_icons/' %}${day.icon}" width="48" height="48"><br>
-                                            ${day.description.charAt(0).toUpperCase() + day.description.slice(1)}<br>
-                                            Temp: ${day.temp}&deg;C<br>
-                                            Humidity: ${day.humidity}%`
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            container.innerHTML = html;
-
-            // Dynamically add "Add to Favorites" button if authenticated and valid data
-            if (
-                {% if user.is_authenticated %}true{% else %}false{% endif %} &&
-                data.location && data.country && !data.forecast[0].error
-            ) {
-                favBtn.innerHTML = `
-                    <form method="post" action="{% url 'add_favorite' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="city" value="${data.location}">
-                        <input type="hidden" name="country" value="${data.country}">
-                        <button type="submit" class="btn btn-outline-success mt-3">Add to Favorites</button>
-                    </form>
-                `;
-            } else {
-                favBtn.innerHTML = "";
-            }
-        })
-        .catch(() => {
-            document.getElementById('weatherResult').innerHTML = '<div class="alert alert-danger">Error fetching weather data.</div>';
-            document.getElementById('addFavoriteBtn').innerHTML = "";
-        });
-}
-</script>
+  <div class="mt-4" id="weatherResult"></div>
+  <div id="addFavoriteBtn"></div>
+</section>
 {% endblock %}

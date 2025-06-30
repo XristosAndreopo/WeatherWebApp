@@ -1,0 +1,34 @@
+/* weatherapp/static/css/theme.css */
+body[data-theme="dark"] {
+    background: #181818 !important;
+    color: #e0e0e0 !important;
+}
+body[data-theme="dark"] #sidebar {
+    background: #232323 !important;
+    color: #e0e0e0 !important;
+}
+body[data-theme="dark"] .card {
+    background: #232323 !important;
+    color: #e0e0e0 !important;
+}
+body[data-theme="dark"] .list-group-item {
+    background: #232323 !important;
+    color: #e0e0e0 !important;
+}
+body[data-theme="dark"] .form-select,
+body[data-theme="dark"] .btn {
+    background: #232323 !important;
+    color: #e0e0e0 !important;
+    border-color: #444 !important;
+}
+body[data-theme="dark"] footer {
+    background: #222 !important;
+    color: #aaa !important;
+}
+body[data-theme="dark"] .nav-link {
+    color: #e0e0e0 !important;
+}
+body[data-theme="dark"] .nav-link.active-link {
+    background: #0a58ca !important;
+    color: #fff !important;
+}

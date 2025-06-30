@@ -3,78 +3,35 @@
 {% now "l, d F Y" as today_date %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-md-7 text-center">
-            <!-- (1) Logo - REMOVED FOR NOW -->
-            <!-- (2) Title -->
-            <h1 class="display-5 mb-2">Dashboard</h1>
-            <!-- (3) Welcome -->
-            <h4 class="mb-3">
-                {% if user.is_authenticated %}
-                    <span class="me-2">👋</span>Welcome, {{ user.get_username }}!
-                {% else %}
-                    Welcome to WeatherWebApp!
-                {% endif %}
-            </h4>
-            <!-- (4) Date -->
-            <div class="mb-2 text-muted" style="font-size: 1.15em;">
-                <span>Today is: {{ today_date }}</span>
-            </div>
-            <!-- (10) Fun emoji -->
-            <div class="mb-2" style="font-size: 2.2em;">
-                {% comment %} You can pick your favorite! {% endcomment %}
-                <span title="Weather emoji">🌤️ ⛈️ 🌦️ ☀️</span>
-            </div>
-            <!-- (5) Random quote -->
-            <div class="my-3 py-2 px-3 bg-light rounded shadow-sm d-inline-block">
-                <span id="weatherQuote" class="fst-italic text-secondary"></span>
-            </div>
-            <!-- (8) Description & navigation tip -->
-            <div class="alert alert-info shadow-sm my-4 py-3" style="font-size: 1.2em; font-weight: 500;">
-                <span style="font-size:1.5em; vertical-align: middle;">🧭</span>
-                <span class="ms-2">
-                Use the <strong>sidebar</strong> to navigate between weather features.<br>
-                <span style="font-weight: 400;">Check forecasts, explore the interactive map, or manage your favorite locations!</span>
-                </span>
-            </div>
-            <!-- (BONUS) Last login for logged-in users -->
-            {% if user.is_authenticated and user.last_login %}
-                <div class="mb-3 small text-secondary">
-                    Last login: {{ user.last_login|date:"l, d F Y H:i" }}
-                </div>
-            {% endif %}
-            <hr class="my-4">
-            <!-- (6,7) Version, credits -->
-            <div class="text-muted small">
-                <strong>WeatherWebApp</strong> v1.0<br>
-                Built by Christos Andreopoulos
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+<main class="container my-5 text-center">
+  <h1 class="display-5">Dashboard</h1>
+  <h4 class="mb-3">
+    {% if user.is_authenticated %}
+      👋 Welcome, {{ user.get_username }}!
+    {% else %}
+      Welcome to WeatherWebApp!
+    {% endif %}
+  </h4>
+  <p class="text-muted">Today is: {{ today_date }}</p>
+  <div class="fs-1 mb-3">🌤️ ⛈️ 🌦️ ☀️</div>
+  <div class="my-3 px-3 py-2 bg-light rounded shadow-sm d-inline-block fst-italic text-secondary"
+       id="weatherQuote">
+    <!-- filled by weather.js -->
+  </div>
 
-{% block extra_js %}
-<script>
-// (5) Fun weather quotes for your dashboard
-const weatherQuotes = [
-    "Wherever you go, no matter what the weather, always bring your own sunshine.",
-    "A change in the weather is sufficient to recreate the world and ourselves.",
-    "Sunshine is delicious, rain is refreshing, wind braces us up, snow is exhilarating.",
-    "After rain comes the rainbow.",
-    "There’s no such thing as bad weather, just soft people.",
-    "The sound of rain needs no translation.",
-    "Clouds come floating into my life, no longer to carry rain or usher storm, but to add color to my sunset sky.",
-    "If you want to see the sunshine, you have to weather the storm.",
-    "The best thing one can do when it's raining is to let it rain.",
-    "The sky is the daily bread of the eyes.",
-    "Let the wind carry away your worries.",
-    "Rain is just confetti from the sky."
-];
-const quoteSpan = document.getElementById('weatherQuote');
-if (quoteSpan) {
-    quoteSpan.textContent = weatherQuotes[Math.floor(Math.random() * weatherQuotes.length)];
-}
-</script>
+  <div class="alert alert-info shadow-sm my-4">
+    🧭 Use the <strong>sidebar</strong> to navigate—check forecasts, map, or your favorites!
+  </div>
+
+  {% if user.is_authenticated and user.last_login %}
+    <div class="small text-secondary mb-3">
+      Last login: {{ user.last_login|date:"l, d F Y H:i" }}
+    </div>
+  {% endif %}
+
+  <hr>
+  <div class="text-muted small">
+    <strong>WeatherWebApp</strong> v1.0 &mdash; Built by Christos Andreopoulos
+  </div>
+</main>
 {% endblock %}
