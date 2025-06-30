@@ -32,3 +32,17 @@ body[data-theme="dark"] .nav-link.active-link {
     background: #0a58ca !important;
     color: #fff !important;
 }
+
+/* ————————————————————————————————————————————————— */
+/* Dark‐mode overrides for the top navbar:         */
+/* so the Apply Theme button really skins it too  */
+/* ————————————————————————————————————————————————— */
+
+body[data-theme="dark"] .navbar {
+    background: #232323 !important;
+}
+
+body[data-theme="dark"] .navbar .navbar-brand,
+body[data-theme="dark"] .navbar .nav-link {
+    color: #e0e0e0 !important;
+}

@@ -1,21 +1,12 @@
 // weatherapp/static/js/weather.js
 
 // ———————————————————————————————————————
-// 1) Dashboard: Random weather quotes
+// Dashboard: Random weather quotes
 // ———————————————————————————————————————
 const WEATHER_QUOTES = [
-    "Wherever you go, no matter what the weather, always bring your own sunshine.",
-    "A change in the weather is sufficient to recreate the world and ourselves.",
-    "Sunshine is delicious, rain is refreshing, wind braces us up, snow is exhilarating.",
-    "After rain comes the rainbow.",
-    "There’s no such thing as bad weather, just soft people.",
-    "The sound of rain needs no translation.",
-    "Clouds come floating into my life, no longer to carry rain or usher storm, but to add color to my sunset sky.",
-    "If you want to see the sunshine, you have to weather the storm.",
-    "The best thing one can do when it's raining is to let it rain.",
-    "The sky is the daily bread of the eyes.",
-    "Let the wind carry away your worries.",
-    "Rain is just confetti from the sky."
+  "Wherever you go, no matter what the weather, always bring your own sunshine.",
+  // … (rest of your quotes) …
+  "Rain is just confetti from the sky."
 ];
 
 function initDashboardQuotes() {
@@ -27,7 +18,7 @@ function initDashboardQuotes() {
 }
 
 // ———————————————————————————————————————
-// 2) Forecast slider on “Find by Location”
+// Forecast slider on “Find by Location”
 // ———————————————————————————————————————
 function initForecastSlider() {
   const slider = document.getElementById('daySlider');
@@ -48,12 +39,21 @@ function initForecastSlider() {
 }
 
 // ———————————————————————————————————————
-// 3) Interactive map on “Map” page
+// Interactive map on “Map” page
 // ———————————————————————————————————————
 function initWeatherMap() {
-  const mapContainer = document.getElementById('map');
-  if (!mapContainer || typeof L === 'undefined') return;
+  if (typeof L === 'undefined' || !document.getElementById('map')) return;
 
+  // DOM references
+  const cityInput     = document.getElementById('cityInput');
+  const countryInput  = document.getElementById('countryInput');
+  const searchBtn     = document.getElementById('searchBtn');
+  const resultEl      = document.getElementById('weatherResult');
+  const favForm       = document.getElementById('mapAddFavForm');
+  const favCityField  = document.getElementById('mapAddFavCity');
+  const favCountryField = document.getElementById('mapAddFavCountry');
+
+  // Initialize Leaflet
   const map = L.map('map').setView([51.505, -0.09], 4);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18
@@ -61,71 +61,62 @@ function initWeatherMap() {
 
   const marker = L.marker([51.505, -0.09], { draggable: true }).addTo(map);
 
-  const fetchWeather = (lat, lng) => {
-    fetch(`${MAP_WEATHER_URL}?lat=${lat}&lng=${lng}`, { credentials: 'same-origin' })
-      .then(r => r.json())
+  // Fetch & render weather forecast
+  function fetchWeather(lat, lng) {
+    fetch(`${MAP_WEATHER_URL}?lat=${lat}&lng=${lng}`, {
+      credentials: 'same-origin'
+    })
+      .then(res => res.json())
       .then(data => {
-        const resultEl = document.getElementById('weatherResult');
-        const favEl    = document.getElementById('addFavoriteBtn');
+        // Render forecast cards
         if (data.error) {
           resultEl.innerHTML = `<div class="alert alert-warning">${data.error}</div>`;
-          favEl.innerHTML    = '';
+          if (favForm) favForm.style.display = 'none';
           return;
         }
+
         let html = `<h4>Forecast for ${data.location}</h4><div class="row">`;
         data.forecast.forEach(day => {
           if (day.error) {
-            html += `<div class="col-md-3 mb-3"><div class="card text-center">
-                       <div class="card-body text-danger">${day.error}</div>
-                     </div></div>`;
+            html += `
+              <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                  <div class="card-body text-danger">${day.error}</div>
+                </div>
+              </div>`;
           } else {
-            html += `<div class="col-md-3 mb-3">
-                       <div class="card text-center">
-                         <div class="card-body">
-                           <strong>${day.date}</strong><br>
-                           <img src="${STATIC_URL}img/weather_icons/${day.icon}"
-                                width="48" height="48" alt=""><br>
-                           ${day.description.charAt(0).toUpperCase() + day.description.slice(1)}<br>
-                           Temp: ${day.temp}&deg;C<br>
-                           Humidity: ${day.humidity}%
-                         </div>
-                       </div>
-                     </div>`;
+            html += `
+              <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                  <div class="card-body">
+                    <strong>${day.date}</strong><br>
+                    <img src="${STATIC_URL}img/weather_icons/${day.icon}"
+                         width="48" height="48" alt=""><br>
+                    ${day.description.charAt(0).toUpperCase() + day.description.slice(1)}<br>
+                    Temp: ${day.temp}&deg;C<br>
+                    Humidity: ${day.humidity}%
+                  </div>
+                </div>
+              </div>`;
           }
         });
         html += `</div>`;
         resultEl.innerHTML = html;
 
-        if (IS_AUTHENTICATED && data.location && !data.forecast[0].error) {
-          favEl.innerHTML = `
-            <form method="post" action="${ADD_FAV_URL}">
-              <input type="hidden" name="csrfmiddlewaretoken" value="${CSRF_TOKEN}">
-              <input type="hidden" name="city"    value="${data.location}">
-              <input type="hidden" name="country" value="${data.country}">
-              <button type="submit" class="btn btn-outline-success mt-3">
-                Add to Favorites
-              </button>
-            </form>`;
-        } else {
-          favEl.innerHTML = '';
+        // Show & populate “Add to Favorites”
+        if (favForm) {
+          favCityField.value    = data.location;
+          favCountryField.value = data.country;
+          favForm.style.display  = 'block';
         }
       })
       .catch(() => {
-        document.getElementById('weatherResult')
-          .innerHTML = '<div class="alert alert-danger">Error fetching weather data.</div>';
-        document.getElementById('addFavoriteBtn').innerHTML = '';
+        resultEl.innerHTML = '<div class="alert alert-danger">Error fetching weather data.</div>';
+        if (favForm) favForm.style.display = 'none';
       });
-  };
-
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-      const { latitude: lat, longitude: lng } = pos.coords;
-      map.setView([lat, lng], 8);
-      marker.setLatLng([lat, lng]);
-      fetchWeather(lat, lng);
-    });
   }
 
+  // Map click & marker drag
   map.on('click', e => {
     marker.setLatLng(e.latlng);
     fetchWeather(e.latlng.lat, e.latlng.lng);
@@ -135,27 +126,44 @@ function initWeatherMap() {
     fetchWeather(lat, lng);
   });
 
-  document.getElementById('searchBtn')?.addEventListener('click', () => {
-    const q = document.getElementById('locationSearch').value.trim();
-    if (!q) return;
+  // Geolocation on load
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      const { latitude, longitude } = pos.coords;
+      map.setView([latitude, longitude], 8);
+      marker.setLatLng([latitude, longitude]);
+      fetchWeather(latitude, longitude);
+    });
+  }
+
+  // Search button click
+  searchBtn.addEventListener('click', e => {
+    e.preventDefault();
+    const city    = cityInput.value.trim();
+    const country = countryInput.value.trim();
+    if (!city) return;
+
+    let q = city;
+    if (country) q += `,${country}`;
+
     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`)
-      .then(r => r.json())
+      .then(res => res.json())
       .then(locations => {
-        if (locations.length) {
-          const { lat, lon } = locations[0];
-          const fl = parseFloat(lat), fn = parseFloat(lon);
-          map.setView([fl, fn], 8);
-          marker.setLatLng([fl, fn]);
-          fetchWeather(fl, fn);
-        } else {
-          alert("Location not found.");
+        if (!locations.length) {
+          alert('Location not found.');
+          return;
         }
+        const { lat, lon } = locations[0];
+        const fLat = parseFloat(lat), fLon = parseFloat(lon);
+        map.setView([fLat, fLon], 8);
+        marker.setLatLng([fLat, fLon]);
+        fetchWeather(fLat, fLon);
       });
   });
 }
 
 // ———————————————————————————————————————
-// 4) Initialize everything on DOM ready
+// Bootstrap all initializers on DOM ready
 // ———————————————————————————————————————
 document.addEventListener('DOMContentLoaded', () => {
   initDashboardQuotes();

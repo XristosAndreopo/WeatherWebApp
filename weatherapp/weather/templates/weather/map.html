@@ -5,19 +5,49 @@
 <section class="container my-5">
   <h2>Interactive Weather Map</h2>
 
-  <div class="mb-3 row g-2">
-    <div class="col-md-8">
-      <input type="text" id="locationSearch" class="form-control"
-             placeholder="e.g. London, GB">
+  <form class="row gx-2 gy-3 mb-4 align-items-end">
+    <div class="col-md-5">
+      <label for="cityInput" class="form-label">City</label>
+      <input
+        type="text"
+        id="cityInput"
+        class="form-control"
+        placeholder="e.g. London"
+      >
     </div>
-    <div class="col-md-4">
+    <div class="col-md-5">
+      <label for="countryInput" class="form-label">Country (optional)</label>
+      <input
+        type="text"
+        id="countryInput"
+        class="form-control"
+        placeholder="e.g. GB  - ISO 2‑letter code"
+        maxlength="2"
+      >
+    </div>
+    <div class="col-md-2">
       <button id="searchBtn" class="btn btn-primary w-100">Search</button>
     </div>
-  </div>
+  </form>
 
   <div id="map" style="height:400px;"></div>
 
   <div class="mt-4" id="weatherResult"></div>
-  <div id="addFavoriteBtn"></div>
+
+  {% if user.is_authenticated %}
+    <form
+      id="mapAddFavForm"
+      method="post"
+      action="{% url 'add_favorite' %}"
+      style="display: none;"
+    >
+      {% csrf_token %}
+      <input type="hidden" name="city" id="mapAddFavCity" value="">
+      <input type="hidden" name="country" id="mapAddFavCountry" value="">
+      <button type="submit" class="btn btn-outline-success mt-3">
+        Add to Favorites
+      </button>
+    </form>
+  {% endif %}
 </section>
 {% endblock %}

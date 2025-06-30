@@ -121,11 +121,8 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="{% static 'js/theme.js' %}"></script>
     <script>
-      const STATIC_URL       = "{% static '' %}";
-      const MAP_WEATHER_URL  = "{% url 'map_weather_data' %}";
-      const ADD_FAV_URL      = "{% url 'add_favorite' %}";
-      const CSRF_TOKEN       = "{{ csrf_token }}";
-      const IS_AUTHENTICATED = {% if user.is_authenticated %}true{% else %}false{% endif %};
+  const STATIC_URL       = "{% static '' %}";
+  const MAP_WEATHER_URL  = "{% url 'map_weather_data' %}";
     </script>
     <script src="{% static 'js/weather.js' %}"></script>
     {% block extra_js %}{% endblock %}
