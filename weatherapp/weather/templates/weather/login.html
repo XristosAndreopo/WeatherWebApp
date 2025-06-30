@@ -1,22 +1,33 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="container" style="max-width: 400px;">
-    <h2>Login</h2>
-    {% if error %}
-        <div class="alert alert-danger">{{ error }}</div>
-    {% endif %}
-    <form method="post">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="username">Username:</label>
-            <input type="text" class="form-control" name="username" id="username" required>
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 70vh;">
+    <div class="card shadow-sm" style="max-width: 400px; width: 100%;">
+        <div class="card-body p-4">
+            <div class="text-center mb-3">
+                <img src="{% static 'logo.png' %}" alt="Logo" width="48">
+            </div>
+            <h3 class="mb-4 text-center">Sign In</h3>
+            {% if error %}
+                <div class="alert alert-danger text-center">{{ error }}</div>
+            {% endif %}
+            <form method="post" action="">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username or Email</label>
+                    <input type="text" class="form-control" id="username" name="username" required autofocus value="{{ request.POST.username }}">
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 mb-3">Login</button>
+            </form>
+            <div class="text-center text-muted small">
+                Forgot your password? <a href="#">(Coming soon)</a>
+            </div>
         </div>
-        <div class="mb-3">
-            <label for="password">Password:</label>
-            <input type="password" class="form-control" name="password" id="password" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Login</button>
-    </form>
+    </div>
 </div>
 {% endblock %}
