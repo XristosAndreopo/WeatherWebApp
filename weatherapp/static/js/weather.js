@@ -1,11 +1,20 @@
 // weatherapp/static/js/weather.js
 
-// ———————————————————————————————————————
-// Dashboard: Random weather quotes
-// ———————————————————————————————————————
+// —————————————————————————————————————————
+// 1) Dashboard: Random weather quotes
+// —————————————————————————————————————————
 const WEATHER_QUOTES = [
   "Wherever you go, no matter what the weather, always bring your own sunshine.",
-  // … (rest of your quotes) …
+  "A change in the weather is sufficient to recreate the world and ourselves.",
+  "Sunshine is delicious, rain is refreshing, wind braces us up, snow is exhilarating.",
+  "After rain comes the rainbow.",
+  "There’s no such thing as bad weather, just soft people.",
+  "The sound of rain needs no translation.",
+  "Clouds come floating into my life, no longer to carry rain or usher storm, but to add color to my sunset sky.",
+  "If you want to see the sunshine, you have to weather the storm.",
+  "The best thing one can do when it's raining is to let it rain.",
+  "The sky is the daily bread of the eyes.",
+  "Let the wind carry away your worries.",
   "Rain is just confetti from the sky."
 ];
 
@@ -17,9 +26,9 @@ function initDashboardQuotes() {
   ];
 }
 
-// ———————————————————————————————————————
-// Forecast slider on “Find by Location”
-// ———————————————————————————————————————
+// —————————————————————————————————————————
+// 2) Forecast slider on “Find by Location”
+// —————————————————————————————————————————
 function initForecastSlider() {
   const slider = document.getElementById('daySlider');
   const label  = document.getElementById('sliderValue');
@@ -38,51 +47,49 @@ function initForecastSlider() {
   update();
 }
 
-// ———————————————————————————————————————
-// Interactive map on “Map” page
-// ———————————————————————————————————————
+// —————————————————————————————————————————
+// 3) Interactive map on “Map” page
+// —————————————————————————————————————————
 function initWeatherMap() {
   if (typeof L === 'undefined' || !document.getElementById('map')) return;
 
-  // DOM references
-  const cityInput     = document.getElementById('cityInput');
-  const countryInput  = document.getElementById('countryInput');
-  const searchBtn     = document.getElementById('searchBtn');
-  const resultEl      = document.getElementById('weatherResult');
-  const favForm       = document.getElementById('mapAddFavForm');
-  const favCityField  = document.getElementById('mapAddFavCity');
+  // DOM refs
+  const cityInput       = document.getElementById('cityInput');
+  const countryInput    = document.getElementById('countryInput');
+  const searchBtn       = document.getElementById('searchBtn');
+  const resultEl        = document.getElementById('weatherResult');
+  const favForm         = document.getElementById('mapAddFavForm');
+  const favCityField    = document.getElementById('mapAddFavCity');
   const favCountryField = document.getElementById('mapAddFavCountry');
 
-  // Initialize Leaflet
+  // Leaflet init
   const map = L.map('map').setView([51.505, -0.09], 4);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18
   }).addTo(map);
-
   const marker = L.marker([51.505, -0.09], { draggable: true }).addTo(map);
 
-  // Fetch & render weather forecast
+  // Fetch & render forecast
   function fetchWeather(lat, lng) {
     fetch(`${MAP_WEATHER_URL}?lat=${lat}&lng=${lng}`, {
       credentials: 'same-origin'
     })
       .then(res => res.json())
       .then(data => {
-        // Render forecast cards
+        // Handle error
         if (data.error) {
           resultEl.innerHTML = `<div class="alert alert-warning">${data.error}</div>`;
           if (favForm) favForm.style.display = 'none';
           return;
         }
 
+        // Build cards, using data.unit for °C/°F
         let html = `<h4>Forecast for ${data.location}</h4><div class="row">`;
         data.forecast.forEach(day => {
           if (day.error) {
             html += `
               <div class="col-md-3 mb-3">
-                <div class="card text-center">
-                  <div class="card-body text-danger">${day.error}</div>
-                </div>
+                <div class="card text-center"><div class="card-body text-danger">${day.error}</div></div>
               </div>`;
           } else {
             html += `
@@ -91,9 +98,9 @@ function initWeatherMap() {
                   <div class="card-body">
                     <strong>${day.date}</strong><br>
                     <img src="${STATIC_URL}img/weather_icons/${day.icon}"
-                         width="48" height="48" alt=""><br>
+                         width="48" height="48" alt="${day.description}"><br>
                     ${day.description.charAt(0).toUpperCase() + day.description.slice(1)}<br>
-                    Temp: ${day.temp}&deg;C<br>
+                    Temp: ${day.temp}${data.unit}<br>
                     Humidity: ${day.humidity}%
                   </div>
                 </div>
@@ -104,7 +111,7 @@ function initWeatherMap() {
         resultEl.innerHTML = html;
 
         // Show & populate “Add to Favorites”
-        if (favForm) {
+        if (favForm && data.location && !data.forecast[0].error) {
           favCityField.value    = data.location;
           favCountryField.value = data.country;
           favForm.style.display  = 'block';
@@ -116,7 +123,7 @@ function initWeatherMap() {
       });
   }
 
-  // Map click & marker drag
+  // Map interactions
   map.on('click', e => {
     marker.setLatLng(e.latlng);
     fetchWeather(e.latlng.lat, e.latlng.lng);
@@ -136,22 +143,19 @@ function initWeatherMap() {
     });
   }
 
-  // Search button click
+  // Search button
   searchBtn.addEventListener('click', e => {
     e.preventDefault();
     const city    = cityInput.value.trim();
     const country = countryInput.value.trim();
     if (!city) return;
 
-    let q = city;
-    if (country) q += `,${country}`;
-
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`)
-      .then(res => res.json())
+    let query = city + (country ? `, ${country}` : '');
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+      .then(r => r.json())
       .then(locations => {
         if (!locations.length) {
-          alert('Location not found.');
-          return;
+          return alert('Location not found.');
         }
         const { lat, lon } = locations[0];
         const fLat = parseFloat(lat), fLon = parseFloat(lon);
@@ -160,54 +164,28 @@ function initWeatherMap() {
         fetchWeather(fLat, fLon);
       });
   });
+
+  // Center on user’s saved default city/country if provided
+  if (DEFAULT_CITY) {
+    let query = DEFAULT_CITY + (DEFAULT_COUNTRY ? `, ${DEFAULT_COUNTRY}` : '');
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+      .then(r => r.json())
+      .then(locations => {
+        if (!locations.length) return;
+        const { lat, lon } = locations[0];
+        const fLat = parseFloat(lat), fLon = parseFloat(lon);
+        map.setView([fLat, fLon], 8);
+        marker.setLatLng([fLat, fLon]);
+        fetchWeather(fLat, fLon);
+      });
+  }
 }
 
-// ———————————————————————————————————————
-// Bootstrap all initializers on DOM ready
-// ———————————————————————————————————————
+// —————————————————————————————————————————
+// 4) Initialize on DOM ready
+// —————————————————————————————————————————
 document.addEventListener('DOMContentLoaded', () => {
   initDashboardQuotes();
   initForecastSlider();
   initWeatherMap();
-});
-
-// weatherapp/static/js/theme.js
-
-// --- Cookie helpers ---
-function getCookie(name) {
-  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-  return match ? match[2] : null;
-}
-function setCookie(name, value, days = 365) {
-  let expires = '';
-  if (days) {
-    const d = new Date();
-    d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
-    expires = ';expires=' + d.toUTCString();
-  }
-  document.cookie = name + '=' + value + expires + ';path=/';
-}
-
-// --- Apply theme to page ---
-function applyTheme(theme) {
-  document.body.setAttribute('data-theme', theme);
-}
-
-// --- On load, sync UI with cookie and apply theme ---
-document.addEventListener('DOMContentLoaded', function() {
-  // 1) Read cookie (or default to light)
-  const theme = getCookie('theme') || 'light';
-  applyTheme(theme);
-
-  // 2) If we're on the settings page, wire up the <select> + button
-  const selectEl = document.getElementById('themeSelect');
-  const btn      = document.getElementById('applyTheme');
-  if (selectEl && btn) {
-    selectEl.value = theme;
-    btn.addEventListener('click', function() {
-      const newTheme = selectEl.value;
-      setCookie('theme', newTheme, 365);
-      applyTheme(newTheme);
-    });
-  }
 });

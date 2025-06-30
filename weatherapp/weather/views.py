@@ -1,5 +1,3 @@
-# weatherapp/weather/views.py
-
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -10,31 +8,33 @@ from .models import FavoriteLocation, Preference
 from .services import WeatherService, WeatherAPIError
 
 def home(request):
-    """
-    Dashboard / home page.
-    """
     return render(request, 'weather/home.html')
 
 @login_required
 def settings_view(request):
     """
-    User settings page: lets users set their default city, country, and units.
-    On GET: displays the form populated with current preferences.
-    On POST: saves submitted preferences and redirects back with a success message.
+    GET: show the settings form with current preferences.
+    POST: save default_city, default_country, default_unit, AND default_theme,
+          set a 'theme' cookie so it takes effect immediately, then redirect.
     """
-    # Retrieve (or create) the Preference instance for this user
     pref, _ = Preference.objects.get_or_create(user=request.user)
 
     if request.method == 'POST':
-        # Update preferences from form data
-        pref.default_city = request.POST.get('default_city', '').strip()
+        # Update all four preferences from the same form
+        pref.default_city    = request.POST.get('default_city', '').strip()
         pref.default_country = request.POST.get('default_country', '').strip().upper()
-        pref.default_unit = request.POST.get('default_unit', 'metric')
+        pref.default_unit    = request.POST.get('default_unit', 'metric')
+        pref.default_theme   = request.POST.get('default_theme', 'light')
         pref.save()
-        messages.success(request, 'Your preferences have been saved.')
-        return redirect('settings')
 
-    # Render form with existing preference values
+        messages.success(request, 'Preferences saved.')
+
+        # Redirect **and** set the 'theme' cookie to the new value
+        response = redirect('settings')
+        response.set_cookie('theme', pref.default_theme, max_age=365*24*3600)
+        return response
+
+    # On GET, just render the form
     return render(request, 'weather/settings.html', {
         'preference': pref
     })
@@ -42,39 +42,23 @@ def settings_view(request):
 @login_required
 def find_location(request):
     """
-    Handles weather lookup by city/country.
-    - If the user provides ?city=… in GET, use that.
-    - Otherwise, fall back to their saved default_city (if any).
-    Always uses the user's default_unit for temperature.
+    Lookup by ?city=&country= or fall back to default_city/default_country.
+    Always pass unit_symbol for templates.
     """
     pref, _ = Preference.objects.get_or_create(user=request.user)
 
-    # Determine search parameters
-    city_q = request.GET.get('city', '').strip()
+    city_q    = request.GET.get('city', '').strip()
     country_q = request.GET.get('country', '').strip().upper()
-    searched = False
+    searched  = bool(city_q or pref.default_city)
 
     if city_q:
-        # User explicitly searched
-        city = city_q
-        country = country_q or None
-        searched = True
-    elif pref.default_city:
-        # Fallback to saved preference
-        city = pref.default_city
-        country = pref.default_country or None
-        searched = True
+        city, country = city_q, (country_q or None)
     else:
-        # No search yet
-        city = country = None
+        city, country = pref.default_city, (pref.default_country or None)
 
-    weather = None
-    city_display = None
-    error_message = None
-
+    weather = city_display = error_message = None
     if searched and city:
         try:
-            # Fetch up to 7 days of forecast, in user's preferred units
             cards, city_display, _ = WeatherService.by_city(
                 city, country,
                 days=7,
@@ -84,60 +68,60 @@ def find_location(request):
         except WeatherAPIError as e:
             error_message = str(e)
 
+    unit_symbol = '°F' if pref.default_unit == 'imperial' else '°C'
+
     return render(request, 'weather/find_location.html', {
         'weather': weather,
         'city_display': city_display,
         'searched': searched,
         'error_message': error_message,
-        'preference': pref,  # so template can show units or defaults
+        'unit_symbol': unit_symbol,
+        'preference': pref,
     })
 
 @login_required
 def map_view(request):
     """
-    Map page: displays interactive map and lets user click or search
-    to fetch weather via AJAX.
+    Pass default_city & default_country so the JS can center the map there.
     """
-    return render(request, 'weather/map.html')
+    pref, _ = Preference.objects.get_or_create(user=request.user)
+    return render(request, 'weather/map.html', {
+        'default_city': pref.default_city,
+        'default_country': pref.default_country,
+    })
 
 @login_required
 def map_weather_data(request):
     """
-    AJAX endpoint: given lat & lng, returns JSON with forecast,
-    location name, and country code. Uses user's preferred units.
+    AJAX: return forecast + unit symbol, location, country.
     """
     lat = request.GET.get('lat')
-    lng = request.GET.get('lng')
-    if not lat or not lng:
+    lon = request.GET.get('lng')
+    if not (lat and lon):
         return JsonResponse({'error': 'Missing coordinates.'})
 
-    # Get user's unit preference
     pref, _ = Preference.objects.get_or_create(user=request.user)
-
     try:
-        cards, city_name, country_code = WeatherService.by_coords(
-            float(lat), float(lng),
+        cards, city, country = WeatherService.by_coords(
+            float(lat), float(lon),
             days=7,
             units=pref.default_unit
         )
-        # Serialize dataclass instances to dicts
-        forecast = [card.__dict__ for card in cards]
+        forecast = [c.__dict__ for c in cards]
+        unit = '°F' if pref.default_unit == 'imperial' else '°C'
         return JsonResponse({
             'forecast': forecast,
-            'location': city_name,
-            'country': country_code,
+            'location': city,
+            'country': country,
+            'unit': unit,
         })
     except WeatherAPIError as e:
         return JsonResponse({'error': str(e)})
 
 @login_required
 def add_favorite(request):
-    """
-    POST handler to add the given city/country to the user's favorites.
-    Redirects to the favorites page, showing a message.
-    """
     if request.method == 'POST':
-        city = request.POST.get('city', '').strip()
+        city    = request.POST.get('city', '').strip()
         country = request.POST.get('country', '').strip().upper()
         if city:
             fav, created = FavoriteLocation.objects.get_or_create(
@@ -145,54 +129,44 @@ def add_favorite(request):
                 city_name=city,
                 country_code=country,
             )
-            if created:
-                messages.success(request, f"{city} added to your favorites!")
-            else:
-                messages.info(request, f"{city} is already in your favorites.")
+            msg = f"{city} added to favorites!" if created else f"{city} already a favorite."
+            messages.info(request, msg)
     return redirect('favorites')
 
 @login_required
 def favorites(request):
     """
-    Displays the user's favorite locations alongside today's and tomorrow's forecast.
-    Uses the user's default_unit preference.
+    Show favorites with today/tomorrow cards + unit symbol.
     """
     pref, _ = Preference.objects.get_or_create(user=request.user)
+    unit_symbol = '°F' if pref.default_unit == 'imperial' else '°C'
 
-    favorites_qs = FavoriteLocation.objects.filter(user=request.user)
     favorite_weather = []
-
-    for fav in favorites_qs:
+    for fav in FavoriteLocation.objects.filter(user=request.user):
         try:
-            # Fetch 2-day forecast for each favorite
             cards, _, _ = WeatherService.by_city(
-                fav.city_name,
-                fav.country_code or None,
+                fav.city_name, fav.country_code or None,
                 days=2,
                 units=pref.default_unit
             )
-            today_card = cards[0]
-            tomorrow_card = cards[1] if len(cards) > 1 else cards[0]
+            today, tomorrow = cards[0], cards[1] if len(cards) > 1 else cards[0]
         except WeatherAPIError as e:
-            today_card = tomorrow_card = {'error': str(e)}
-
+            today = tomorrow = {'error': str(e)}
         favorite_weather.append({
             'id': fav.id,
             'city': fav.city_name,
             'country': fav.country_code,
-            'today': today_card,
-            'tomorrow': tomorrow_card,
+            'today': today,
+            'tomorrow': tomorrow,
         })
 
     return render(request, 'weather/favorites.html', {
-        'favorite_weather': favorite_weather
+        'favorite_weather': favorite_weather,
+        'unit_symbol': unit_symbol,
     })
 
 @login_required
 def remove_favorite(request, favorite_id):
-    """
-    Removes the FavoriteLocation with the given ID (if it belongs to the user).
-    """
     try:
         fav = FavoriteLocation.objects.get(id=favorite_id, user=request.user)
         fav.delete()
@@ -202,21 +176,12 @@ def remove_favorite(request, favorite_id):
     return redirect('favorites')
 
 def about(request):
-    """
-    Static about page.
-    """
     return render(request, 'weather/about.html')
 
 def contact(request):
-    """
-    Static contact page.
-    """
     return render(request, 'weather/contact.html')
 
 def login_view(request):
-    """
-    Handles user login. On POST, authenticates and redirects to home.
-    """
     if request.method == 'POST':
         user = authenticate(
             request,
@@ -226,20 +191,13 @@ def login_view(request):
         if user:
             login(request, user)
             return redirect('home')
-        else:
-            return render(request, 'weather/login.html', {'error': 'Invalid credentials'})
+        return render(request, 'weather/login.html', {'error': 'Invalid credentials'})
     return render(request, 'weather/login.html')
 
 def logout_view(request):
-    """
-    Logs out the current user and redirects to home.
-    """
     logout(request)
     return redirect('home')
 
 @login_required
 def profile(request):
-    """
-    User profile page (read‑only for now).
-    """
     return render(request, 'weather/profile.html')

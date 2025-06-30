@@ -8,22 +8,11 @@
   <form class="row gx-2 gy-3 mb-4 align-items-end">
     <div class="col-md-5">
       <label for="cityInput" class="form-label">City</label>
-      <input
-        type="text"
-        id="cityInput"
-        class="form-control"
-        placeholder="e.g. London"
-      >
+      <input type="text" id="cityInput" class="form-control" placeholder="e.g. London" value="{{ default_city }}">
     </div>
     <div class="col-md-5">
       <label for="countryInput" class="form-label">Country (optional)</label>
-      <input
-        type="text"
-        id="countryInput"
-        class="form-control"
-        placeholder="e.g. GB  - ISO 2‑letter code"
-        maxlength="2"
-      >
+      <input type="text" id="countryInput" class="form-control" placeholder="e.g. GB - ISO 2‑letter code" maxlength="10" value="{{ default_country }}">
     </div>
     <div class="col-md-2">
       <button id="searchBtn" class="btn btn-primary w-100">Search</button>
@@ -31,22 +20,14 @@
   </form>
 
   <div id="map" style="height:400px;"></div>
-
   <div class="mt-4" id="weatherResult"></div>
 
   {% if user.is_authenticated %}
-    <form
-      id="mapAddFavForm"
-      method="post"
-      action="{% url 'add_favorite' %}"
-      style="display: none;"
-    >
+    <form id="mapAddFavForm" method="post" action="{% url 'add_favorite' %}" style="display:none;">
       {% csrf_token %}
-      <input type="hidden" name="city" id="mapAddFavCity" value="">
-      <input type="hidden" name="country" id="mapAddFavCountry" value="">
-      <button type="submit" class="btn btn-outline-success mt-3">
-        Add to Favorites
-      </button>
+      <input type="hidden" name="city" id="mapAddFavCity">
+      <input type="hidden" name="country" id="mapAddFavCountry">
+      <button class="btn btn-outline-success mt-3">Add to Favorites</button>
     </form>
   {% endif %}
 </section>

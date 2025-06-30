@@ -10,11 +10,11 @@
       {% for fav in favorite_weather %}
         <div class="col-md-6 mb-4">
           <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <span><strong>{{ fav.city }}</strong>{% if fav.country %}, {{ fav.country }}{% endif %}</span>
+            <div class="card-header d-flex justify-content-between">
+              <strong>{{ fav.city }}{% if fav.country %}, {{ fav.country }}{% endif %}</strong>
               <form method="post" action="{% url 'remove_favorite' fav.id %}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                <button class="btn btn-sm btn-danger">Remove</button>
               </form>
             </div>
             <div class="card-body">
@@ -24,11 +24,10 @@
                   {% if fav.today.error %}
                     <span class="text-danger">{{ fav.today.error }}</span>
                   {% else %}
-                    <div><small>{{ fav.today.date }}</small></div>
-                    <img src="{% static 'img/weather_icons/' %}{{ fav.today.icon }}"
-                         alt="{{ fav.today.description }}" width="48" height="48"><br>
+                    <small>{{ fav.today.date }}</small><br>
+                    <img src="{% static 'img/weather_icons/' %}{{ fav.today.icon }}" alt="" width="48" height="48"><br>
                     {{ fav.today.description|capfirst }}<br>
-                    Temp: {{ fav.today.temp }}&deg;C<br>
+                    Temp: {{ fav.today.temp }}{{ unit_symbol }}<br>
                     Humidity: {{ fav.today.humidity }}%
                   {% endif %}
                 </div>
@@ -37,11 +36,10 @@
                   {% if fav.tomorrow.error %}
                     <span class="text-danger">{{ fav.tomorrow.error }}</span>
                   {% else %}
-                    <div><small>{{ fav.tomorrow.date }}</small></div>
-                    <img src="{% static 'img/weather_icons/' %}{{ fav.tomorrow.icon }}"
-                         alt="{{ fav.tomorrow.description }}" width="48" height="48"><br>
+                    <small>{{ fav.tomorrow.date }}</small><br>
+                    <img src="{% static 'img/weather_icons/' %}{{ fav.tomorrow.icon }}" alt="" width="48" height="48"><br>
                     {{ fav.tomorrow.description|capfirst }}<br>
-                    Temp: {{ fav.tomorrow.temp }}&deg;C<br>
+                    Temp: {{ fav.tomorrow.temp }}{{ unit_symbol }}<br>
                     Humidity: {{ fav.tomorrow.humidity }}%
                   {% endif %}
                 </div>
