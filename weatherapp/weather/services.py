@@ -1,5 +1,3 @@
-# weather/services.py
-
 import requests
 from django.conf import settings
 from .constants import OPENWEATHER_BASE

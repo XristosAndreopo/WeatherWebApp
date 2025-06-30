@@ -8,23 +8,27 @@
   <form method="get" class="row gx-2 gy-3 mb-4 align-items-end">
     <div class="col-md-5">
       <label for="city" class="form-label">City</label>
-      <input type="text"
-             id="city"
-             name="city"
-             class="form-control"
-             placeholder="e.g. London"
-             required
-             value="{{ request.GET.city }}">
+      <input
+        type="text"
+        id="city"
+        name="city"
+        class="form-control"
+        placeholder="e.g. London"
+        value="{{ request.GET.city|default:preference.default_city }}"
+      >
     </div>
     <div class="col-md-5">
       <label for="country" class="form-label">Country (optional)</label>
-      <input type="text"
-             id="country"
-             name="country"
-             class="form-control"
-             placeholder="e.g. GB  - ISO 2‑letter code"
-             maxlength="2"
-             value="{{ request.GET.country|upper }}">
+      <input
+        type="text"
+        id="country"
+        name="country"
+        class="form-control"
+        placeholder="e.g. GB  - ISO 2‑letter code"
+        maxlength="2"
+        value="{{ request.GET.country|upper|default:preference.default_country }}"
+      >
+      <div class="form-text">ISO 2‑letter code</div>
     </div>
     <div class="col-md-2">
       <button type="submit" class="btn btn-primary w-100">Find</button>
@@ -39,12 +43,14 @@
       <label for="daySlider" class="form-label">
         Days to show: <span id="sliderValue">{{ weather|length }}</span>
       </label>
-      <input type="range"
-             class="form-range"
-             min="1"
-             max="{{ weather|length }}"
-             id="daySlider"
-             value="{{ weather|length }}">
+      <input
+        type="range"
+        class="form-range"
+        min="1"
+        max="{{ weather|length }}"
+        id="daySlider"
+        value="{{ weather|length }}"
+      >
     </div>
 
     <div class="row" id="forecastCards">
@@ -56,9 +62,12 @@
                 <div class="text-danger">{{ day.error }}</div>
               {% else %}
                 <strong>{{ day.date }}</strong><br>
-                <img src="{% static 'img/weather_icons/' %}{{ day.icon }}"
-                     alt="{{ day.description }}"
-                     width="48" height="48"><br>
+                <img
+                  src="{% static 'img/weather_icons/' %}{{ day.icon }}"
+                  alt="{{ day.description }}"
+                  width="48"
+                  height="48"
+                ><br>
                 {{ day.description|capfirst }}<br>
                 Temp: {{ day.temp }}&deg;C<br>
                 Humidity: {{ day.humidity }}%
@@ -73,11 +82,10 @@
       <form method="post" action="{% url 'add_favorite' %}">
         {% csrf_token %}
         <input type="hidden" name="city"    value="{{ city_display }}">
-        <input type="hidden" name="country" value="{{ request.GET.country|upper }}">
-        <button class="btn btn-outline-success">Add to Favorites</button>
+        <input type="hidden" name="country" value="{{ request.GET.country|upper|default:preference.default_country }}">
+        <button type="submit" class="btn btn-outline-success">Add to Favorites</button>
       </form>
     {% endif %}
-
   {% elif searched %}
     <div class="alert alert-warning mt-3">
       {{ error_message|default:"No weather data found. Check your inputs."|capfirst }}
