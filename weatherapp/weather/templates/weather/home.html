@@ -31,10 +31,13 @@
                 <span id="weatherQuote" class="fst-italic text-secondary"></span>
             </div>
             <!-- (8) Description & navigation tip -->
-            <p class="lead mt-4 mb-2">
-                <strong> Use the sidebar to navigate between weather features.</strong><br>
-                <strong> Check forecasts, explore the interactive map, or manage your favorite locations!</strong>
-            </p>
+            <div class="alert alert-info shadow-sm my-4 py-3" style="font-size: 1.2em; font-weight: 500;">
+                <span style="font-size:1.5em; vertical-align: middle;">🧭</span>
+                <span class="ms-2">
+                Use the <strong>sidebar</strong> to navigate between weather features.<br>
+                <span style="font-weight: 400;">Check forecasts, explore the interactive map, or manage your favorite locations!</span>
+                </span>
+            </div>
             <!-- (BONUS) Last login for logged-in users -->
             {% if user.is_authenticated and user.last_login %}
                 <div class="mb-3 small text-secondary">
