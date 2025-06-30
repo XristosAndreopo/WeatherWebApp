@@ -1,48 +1,125 @@
 /* weatherapp/static/css/theme.css */
-body[data-theme="dark"] {
-    background: #181818 !important;
-    color: #e0e0e0 !important;
+
+/* ———————————————————————————————————————————————— */
+/* Light (default)—no overrides needed */
+/* ———————————————————————————————————————————————— */
+
+/* ———————————————————————————————————————————————— */
+/* Light Dark (softer dark)             */
+/* ———————————————————————————————————————————————— */
+body[data-theme="light-dark"] {
+    background: #2e2e2e !important;
+    color: #dcdcdc !important;
 }
-body[data-theme="dark"] #sidebar {
-    background: #232323 !important;
-    color: #e0e0e0 !important;
+body[data-theme="light-dark"] #sidebar,
+body[data-theme="light-dark"] .card,
+body[data-theme="light-dark"] .list-group-item {
+    background: #383838 !important;
+    color: #dcdcdc !important;
 }
-body[data-theme="dark"] .card {
-    background: #232323 !important;
-    color: #e0e0e0 !important;
+body[data-theme="light-dark"] .form-select,
+body[data-theme="light-dark"] .form-control,
+body[data-theme="light-dark"] .btn {
+    background: #383838 !important;
+    color: #dcdcdc !important;
+    border-color: #555 !important;
 }
-body[data-theme="dark"] .list-group-item {
-    background: #232323 !important;
-    color: #e0e0e0 !important;
+body[data-theme="light-dark"] footer,
+body[data-theme="light-dark"] .navbar {
+    background: #2b2b2b !important;
+    color: #dcdcdc !important;
 }
-body[data-theme="dark"] .form-select,
-body[data-theme="dark"] .btn {
-    background: #232323 !important;
-    color: #e0e0e0 !important;
-    border-color: #444 !important;
+body[data-theme="light-dark"] .navbar .navbar-brand,
+body[data-theme="light-dark"] .navbar .nav-link {
+    color: #dcdcdc !important;
 }
-body[data-theme="dark"] footer {
-    background: #222 !important;
-    color: #aaa !important;
+
+/* ———————————————————————————————————————————————— */
+/* Dracula theme                        */
+/* ———————————————————————————————————————————————— */
+body[data-theme="dracula"] {
+    background: #282a36 !important;
+    color: #f8f8f2 !important;
 }
-body[data-theme="dark"] .nav-link {
-    color: #e0e0e0 !important;
+body[data-theme="dracula"] #sidebar,
+body[data-theme="dracula"] .card,
+body[data-theme="dracula"] .list-group-item {
+    background: #44475a !important;
+    color: #f8f8f2 !important;
 }
-body[data-theme="dark"] .nav-link.active-link {
-    background: #0a58ca !important;
+body[data-theme="dracula"] .form-select,
+body[data-theme="dracula"] .form-control,
+body[data-theme="dracula"] .btn {
+    background: #44475a !important;
+    color: #f8f8f2 !important;
+    border-color: #6272a4 !important;
+}
+body[data-theme="dracula"] footer,
+body[data-theme="dracula"] .navbar {
+    background: #44475a !important;
+    color: #f8f8f2 !important;
+}
+body[data-theme="dracula"] .navbar .navbar-brand,
+body[data-theme="dracula"] .navbar .nav-link {
+    color: #f8f8f2 !important;
+}
+
+/* ———————————————————————————————————————————————— */
+/* High‑Contrast theme                   */
+/* ———————————————————————————————————————————————— */
+body[data-theme="high-contrast"] {
+    background: #000 !important;
+    color: #fff !important;
+}
+body[data-theme="high-contrast"] #sidebar,
+body[data-theme="high-contrast"] .card,
+body[data-theme="high-contrast"] .list-group-item {
+    background: #000 !important;
+    color: #fff !important;
+}
+body[data-theme="high-contrast"] .form-select,
+body[data-theme="high-contrast"] .form-control,
+body[data-theme="high-contrast"] .btn {
+    background: #000 !important;
+    color: #fff !important;
+    border-color: #fff !important;
+}
+body[data-theme="high-contrast"] footer,
+body[data-theme="high-contrast"] .navbar {
+    background: #000 !important;
+    color: #fff !important;
+}
+body[data-theme="high-contrast"] .navbar .navbar-brand,
+body[data-theme="high-contrast"] .navbar .nav-link {
     color: #fff !important;
 }
 
-/* ————————————————————————————————————————————————— */
-/* Dark‐mode overrides for the top navbar:         */
-/* so the Apply Theme button really skins it too  */
-/* ————————————————————————————————————————————————— */
-
-body[data-theme="dark"] .navbar {
-    background: #232323 !important;
+/* ———————————————————————————————————————————————— */
+/* Sepia theme                           */
+/* ———————————————————————————————————————————————— */
+body[data-theme="sepia"] {
+    background: #f4ecd8 !important;
+    color: #5b4636 !important;
 }
-
-body[data-theme="dark"] .navbar .navbar-brand,
-body[data-theme="dark"] .navbar .nav-link {
-    color: #e0e0e0 !important;
+body[data-theme="sepia"] #sidebar,
+body[data-theme="sepia"] .card,
+body[data-theme="sepia"] .list-group-item {
+    background: #e4dac0 !important;
+    color: #5b4636 !important;
+}
+body[data-theme="sepia"] .form-select,
+body[data-theme="sepia"] .form-control,
+body[data-theme="sepia"] .btn {
+    background: #e4dac0 !important;
+    color: #5b4636 !important;
+    border-color: #c5b491 !important;
+}
+body[data-theme="sepia"] footer,
+body[data-theme="sepia"] .navbar {
+    background: #d4c8a8 !important;
+    color: #5b4636 !important;
+}
+body[data-theme="sepia"] .navbar .navbar-brand,
+body[data-theme="sepia"] .navbar .nav-link {
+    color: #5b4636 !important;
 }
