@@ -94,12 +94,13 @@
           </div>
         {% endfor %}
       </div>
+
       {% if user.is_authenticated %}
         <form method="post" action="{% url 'add_favorite' %}">
           {% csrf_token %}
           <input type="hidden" name="city"    value="{{ city_display }}">
           <input type="hidden" name="country" value="{{ request.GET.country|upper|default:preference.default_country }}">
-          <button class="btn btn-outline-success">Add to Favorites</button>
+          <button class="btn btn-outline-success mt-3">Add to Favorites</button>
         </form>
       {% endif %}
     </div>
@@ -109,6 +110,15 @@
       <hr>
       <h4>Next 24 Hours</h4>
       <canvas id="findHourlyChart" height="80"></canvas>
+
+      {% if user.is_authenticated %}
+        <form method="post" action="{% url 'add_favorite' %}">
+          {% csrf_token %}
+          <input type="hidden" name="city"    value="{{ city_display }}">
+          <input type="hidden" name="country" value="{{ request.GET.country|upper|default:preference.default_country }}">
+          <button class="btn btn-outline-success mt-3">Add to Favorites</button>
+        </form>
+      {% endif %}
     </div>
   {% endif %}
 
