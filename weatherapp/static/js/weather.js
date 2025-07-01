@@ -3,6 +3,7 @@
 // —————————————————————————————————————————
 // 1) Dashboard: Random weather quotes
 // —————————————————————————————————————————
+console.log("✅ weather.js loaded and running");
 const WEATHER_QUOTES = [
   "Wherever you go, no matter what the weather, always bring your own sunshine.",
   "A change in the weather is sufficient to recreate the world and ourselves.",
@@ -48,74 +49,112 @@ function initForecastSlider() {
 }
 
 // —————————————————————————————————————————
-// 3) Interactive map on “Map” page
+// 3) Interactive map + daily forecast
 // —————————————————————————————————————————
 function initWeatherMap() {
   if (typeof L === 'undefined' || !document.getElementById('map')) return;
 
   // DOM refs
-  const cityInput       = document.getElementById('cityInput');
-  const countryInput    = document.getElementById('countryInput');
-  const searchBtn       = document.getElementById('searchBtn');
-  const resultEl        = document.getElementById('weatherResult');
-  const favForm         = document.getElementById('mapAddFavForm');
-  const favCityField    = document.getElementById('mapAddFavCity');
-  const favCountryField = document.getElementById('mapAddFavCountry');
+  const cityInput        = document.getElementById('cityInput');
+  const countryInput     = document.getElementById('countryInput');
+  const searchBtn        = document.getElementById('searchBtn');
+  const resultEl         = document.getElementById('weatherResult');
+  const favForm          = document.getElementById('mapAddFavForm');
+  const favCityField     = document.getElementById('mapAddFavCity');
+  const favCountryField  = document.getElementById('mapAddFavCountry');
+  const canvasHourly     = document.getElementById('hourlyChart');
+  const ctxHourly        = canvasHourly?.getContext('2d');
+  let hourlyChartInst;
 
-  // Leaflet init
+  // Initialize Leaflet
   const map = L.map('map').setView([51.505, -0.09], 4);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18
-  }).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
   const marker = L.marker([51.505, -0.09], { draggable: true }).addTo(map);
 
-  // Fetch & render forecast
-  function fetchWeather(lat, lng) {
-    fetch(`${MAP_WEATHER_URL}?lat=${lat}&lng=${lng}`, {
-      credentials: 'same-origin'
-    })
-      .then(res => res.json())
+  // Render Chart.js line chart (next 24h)
+  function renderHourlyChart(hourly, unit) {
+    if (!ctxHourly) return;
+    const labels = hourly.map(h => {
+      const d = new Date(h.dt * 1000);
+      return d.getHours().toString().padStart(2, '0') + ':00';
+    });
+    const data = hourly.map(h => h.temp);
+    if (hourlyChartInst) hourlyChartInst.destroy();
+    hourlyChartInst = new Chart(ctxHourly, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: `Temperature (${unit})`,
+          data,
+          fill: false,
+          tension: 0.2
+        }]
+      },
+      options: {
+        scales: {
+          x: { title: { display: true, text: 'Hour' } },
+          y: { title: { display: true, text: `Temp (${unit})` } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  // Fetch next 24h hourly data
+  function fetchHourly(lat, lng) {
+    fetch(`${MAP_HOURLY_URL}?lat=${lat}&lng=${lng}`, { credentials: 'same-origin' })
+      .then(r => r.json())
       .then(data => {
-        // Handle error
+        if (data.hourly && Array.isArray(data.hourly)) {
+          renderHourlyChart(data.hourly, data.unit);
+        }
+      })
+      .catch(() => {
+        // fail silently
+      });
+  }
+
+  // Fetch daily forecast & then hourly
+  function fetchWeather(lat, lng) {
+    fetch(`${MAP_WEATHER_URL}?lat=${lat}&lng=${lng}`, { credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(data => {
         if (data.error) {
           resultEl.innerHTML = `<div class="alert alert-warning">${data.error}</div>`;
           if (favForm) favForm.style.display = 'none';
           return;
         }
 
-        // Build cards, using data.unit for °C/°F
+        // Build daily cards
         let html = `<h4>Forecast for ${data.location}</h4><div class="row">`;
         data.forecast.forEach(day => {
-          if (day.error) {
-            html += `
-              <div class="col-md-3 mb-3">
-                <div class="card text-center"><div class="card-body text-danger">${day.error}</div></div>
-              </div>`;
-          } else {
-            html += `
-              <div class="col-md-3 mb-3">
-                <div class="card text-center">
-                  <div class="card-body">
-                    <strong>${day.date}</strong><br>
-                    <img src="${STATIC_URL}img/weather_icons/${day.icon}"
-                         width="48" height="48" alt="${day.description}"><br>
-                    ${day.description.charAt(0).toUpperCase() + day.description.slice(1)}<br>
-                    Temp: ${day.temp}${data.unit}<br>
-                    Humidity: ${day.humidity}%
-                  </div>
-                </div>
-              </div>`;
-          }
+          html += day.error
+            ? `<div class="col-md-3 mb-3">
+                 <div class="card text-center"><div class="card-body text-danger">${day.error}</div></div>
+               </div>`
+            : `<div class="col-md-3 mb-3">
+                 <div class="card text-center"><div class="card-body">
+                   <strong>${day.date}</strong><br>
+                   <img src="${STATIC_URL}img/weather_icons/${day.icon}" width="48" height="48" alt=""><br>
+                   ${day.description.charAt(0).toUpperCase() + day.description.slice(1)}<br>
+                   Temp: ${day.temp}${data.unit}<br>
+                   Humidity: ${day.humidity}%
+                 </div></div>
+               </div>`;
         });
         html += `</div>`;
         resultEl.innerHTML = html;
 
-        // Show & populate “Add to Favorites”
+        // Show favorites form
         if (favForm && data.location && !data.forecast[0].error) {
           favCityField.value    = data.location;
           favCountryField.value = data.country;
           favForm.style.display  = 'block';
         }
+
+        // Then draw hourly
+        fetchHourly(lat, lng);
       })
       .catch(() => {
         resultEl.innerHTML = '<div class="alert alert-danger">Error fetching weather data.</div>';
@@ -123,7 +162,7 @@ function initWeatherMap() {
       });
   }
 
-  // Map interactions
+  // Map click & drag
   map.on('click', e => {
     marker.setLatLng(e.latlng);
     fetchWeather(e.latlng.lat, e.latlng.lng);
@@ -133,7 +172,7 @@ function initWeatherMap() {
     fetchWeather(lat, lng);
   });
 
-  // Geolocation on load
+  // Geolocation
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(pos => {
       const { latitude, longitude } = pos.coords;
@@ -143,37 +182,31 @@ function initWeatherMap() {
     });
   }
 
-  // Search button
+  // Search box
   searchBtn.addEventListener('click', e => {
     e.preventDefault();
-    const city    = cityInput.value.trim();
-    const country = countryInput.value.trim();
+    const city = cityInput.value.trim(), country = countryInput.value.trim();
     if (!city) return;
-
-    let query = city + (country ? `, ${country}` : '');
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+    const q = city + (country ? `, ${country}` : '');
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`)
       .then(r => r.json())
-      .then(locations => {
-        if (!locations.length) {
-          return alert('Location not found.');
-        }
-        const { lat, lon } = locations[0];
-        const fLat = parseFloat(lat), fLon = parseFloat(lon);
+      .then(loc => {
+        if (!loc.length) return alert('Location not found.');
+        const { lat, lon } = loc[0], fLat = +lat, fLon = +lon;
         map.setView([fLat, fLon], 8);
         marker.setLatLng([fLat, fLon]);
         fetchWeather(fLat, fLon);
       });
   });
 
-  // Center on user’s saved default city/country if provided
+  // Center on default
   if (DEFAULT_CITY) {
-    let query = DEFAULT_CITY + (DEFAULT_COUNTRY ? `, ${DEFAULT_COUNTRY}` : '');
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+    const q = DEFAULT_CITY + (DEFAULT_COUNTRY ? `, ${DEFAULT_COUNTRY}` : '');
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`)
       .then(r => r.json())
-      .then(locations => {
-        if (!locations.length) return;
-        const { lat, lon } = locations[0];
-        const fLat = parseFloat(lat), fLon = parseFloat(lon);
+      .then(loc => {
+        if (!loc.length) return;
+        const { lat, lon } = loc[0], fLat = +lat, fLon = +lon;
         map.setView([fLat, fLon], 8);
         marker.setLatLng([fLat, fLon]);
         fetchWeather(fLat, fLon);
@@ -182,10 +215,88 @@ function initWeatherMap() {
 }
 
 // —————————————————————————————————————————
-// 4) Initialize on DOM ready
+// 4) Dropdown‑style toggle for Find‑by‑Location
 // —————————————————————————————————————————
+function initFindDropdown() {
+  console.log("📊 initFindDropdown running");
+  const container   = document.getElementById('findSection');
+  if (!container) return;
+
+  const dropdownBtn = container.querySelector('#forecastDropdown');
+  const items       = container.querySelectorAll('.dropdown-item');
+  const dailyDiv    = document.getElementById('dailyForecast');
+  const hourlyDiv   = document.getElementById('hourlyForecast');
+  const ctx         = document.getElementById('findHourlyChart')?.getContext('2d');
+  let chartInst;
+
+  // grab coords once
+  const lat = parseFloat(container.dataset.lat);
+  const lng = parseFloat(container.dataset.lng);
+
+  items.forEach(item => {
+    item.addEventListener('click', e => {
+      e.preventDefault();
+      const choice = item.dataset.forecast; // "daily" or "hourly"
+      dropdownBtn.textContent = `Show: ${item.textContent}`;
+
+      if (choice === 'daily') {
+        dailyDiv.style.display  = '';
+        hourlyDiv.style.display = 'none';
+      } else {
+        dailyDiv.style.display  = 'none';
+        hourlyDiv.style.display = '';
+
+        if (isNaN(lat) || isNaN(lng) || !ctx) return;
+
+        fetch(`${MAP_HOURLY_URL}?lat=${lat}&lng=${lng}`, {
+          credentials: 'same-origin'
+        })
+          .then(r => r.json())
+          .then(data => {
+            if (!data.hourly) return;
+            const labels = data.hourly.map(h => {
+              const d = new Date(h.dt * 1000);
+              return d.getHours().toString().padStart(2, '0') + ':00';
+            });
+            const temps = data.hourly.map(h => h.temp);
+
+            if (chartInst) chartInst.destroy();
+            chartInst = new Chart(ctx, {
+              type: 'line',
+              data: {
+                labels,
+                datasets: [{
+                  label: `Temp (${data.unit})`,
+                  data: temps,
+                  fill: false,
+                  tension: 0.2
+                }]
+              },
+              options: {
+                scales: {
+                  x: { title: { display: true, text: 'Hour' } },
+                  y: { title: { display: true, text: `Temp (${data.unit})` } }
+                },
+                plugins: { legend: { display: false } }
+              }
+            });
+          })
+          .catch(console.error);
+      }
+    });
+  });
+
+  // start on daily view
+  dailyDiv.style.display  = '';
+  hourlyDiv.style.display = 'none';
+}
+
+// —————————————————————————————
+// Initialize everything once
+// —————————————————————————————
 document.addEventListener('DOMContentLoaded', () => {
   initDashboardQuotes();
   initForecastSlider();
   initWeatherMap();
+  initFindDropdown();
 });

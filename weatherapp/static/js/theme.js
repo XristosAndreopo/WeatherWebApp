@@ -39,3 +39,47 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
+/* ------------------------------------------------------------------
+   Toggle‑style for the Find‑by‑Location Daily / Next 24 Hrs radios
+------------------------------------------------------------------ */
+#findSection .form-check-input {
+  /* hide the native radio circle */
+  display: none;
+}
+
+#findSection .form-check-inline .form-check-label {
+  display: inline-block;
+  padding: .4rem 1rem;
+  margin: 0;                       /* remove Bootstrap’s default spacing */
+  border: 1px solid #0d6efd;      /* blue border */
+  color: #0d6efd;                 /* blue text */
+  cursor: pointer;
+  user-select: none;
+  transition: background .2s, color .2s;
+}
+
+/* Remove double borders between the two labels */
+#findSection .form-check-inline:not(:last-child) .form-check-label {
+  border-right: none;
+}
+
+/* Round the ends */
+#findSection .form-check-label[for="dailyToggle"] {
+  border-radius: .25rem 0 0 .25rem;
+}
+#findSection .form-check-label[for="hourlyToggle"] {
+  border-radius: 0 .25rem .25rem 0;
+}
+
+/* Hover state */
+#findSection .form-check-inline .form-check-label:hover {
+  background: rgba(13, 110, 253, .1);
+}
+
+/* Checked state: fill with blue, white text */
+#findSection #dailyToggle:checked + label[for="dailyToggle"],
+#findSection #hourlyToggle:checked + label[for="hourlyToggle"] {
+  background-color: #0d6efd;
+  color: #fff;
+}

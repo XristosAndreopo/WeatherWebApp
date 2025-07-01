@@ -2,72 +2,123 @@
 {% load static %}
 
 {% block content %}
-<section class="container my-5">
+<section
+  id="findSection"
+  class="container my-5"
+  data-lat="{{ find_lat }}"
+  data-lng="{{ find_lng }}"
+>
   <h2>Find Weather by Location</h2>
 
+  <!-- Search form -->
   <form method="get" class="row gx-2 gy-3 mb-4 align-items-end">
     <div class="col-md-5">
       <label for="city" class="form-label">City</label>
-      <input type="text" id="city" name="city" class="form-control"
-             placeholder="e.g. London"
-             value="{{ request.GET.city|default:preference.default_city }}">
+      <input
+        id="city" name="city" type="text"
+        class="form-control"
+        placeholder="e.g. London"
+        value="{{ request.GET.city|default:preference.default_city }}"
+      >
     </div>
     <div class="col-md-5">
       <label for="country" class="form-label">Country (optional)</label>
-      <input type="text" id="country" name="country" class="form-control"
-             placeholder="e.g. GB - ISO 2‑letter code" maxlength="10"
-             value="{{ request.GET.country|upper|default:preference.default_country }}">
+      <input
+        id="country" name="country" type="text"
+        class="form-control"
+        placeholder="e.g. GB / ISO 2‑letter code"
+        maxlength="10"
+        value="{{ request.GET.country|upper|default:preference.default_country }}"
+      >
     </div>
     <div class="col-md-2">
       <button type="submit" class="btn btn-primary w-100">Find</button>
     </div>
   </form>
 
-  {% if weather %}
-    <hr>
-    <h4>Forecast for {{ city_display }}</h4>
-
-    <div class="mb-3">
-      <label for="daySlider" class="form-label">
-        Days to show: <span id="sliderValue">{{ weather|length }}</span>
-      </label>
-      <input type="range" class="form-range"
-             min="1" max="{{ weather|length }}"
-             id="daySlider" value="{{ weather|length }}">
+  {% if searched %}
+    <!-- Dropdown to choose forecast type -->
+    <div class="dropdown mb-3">
+      <button
+        class="btn btn-primary dropdown-toggle"
+        type="button"
+        id="forecastDropdown"
+        data-bs-toggle="dropdown"
+        aria-expanded="false"
+      >
+        Show: Daily
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="forecastDropdown">
+        <li><a class="dropdown-item" href="#" data-forecast="daily">Daily</a></li>
+        <li><a class="dropdown-item" href="#" data-forecast="hourly">Next 24 Hrs</a></li>
+      </ul>
     </div>
 
-    <div class="row" id="forecastCards">
-      {% for day in weather %}
-        <div class="col-md-3 mb-3 forecast-day" data-day="{{ forloop.counter }}">
-          <div class="card text-center">
-            <div class="card-body">
-              {% if day.error %}
-                <div class="text-danger">{{ day.error }}</div>
-              {% else %}
-                <strong>{{ day.date }}</strong><br>
-                <img src="{% static 'img/weather_icons/' %}{{ day.icon }}" alt="" width="48" height="48"><br>
-                {{ day.description|capfirst }}<br>
-                Temp: {{ day.temp }}{{ unit_symbol }}<br>
-                Humidity: {{ day.humidity }}%
-              {% endif %}
+    <!-- Daily forecast -->
+    <div id="dailyForecast">
+      <hr>
+      <h4>Forecast for {{ city_display }}</h4>
+      <div class="mb-3">
+        <label for="daySlider" class="form-label">
+          Days to show: <span id="sliderValue">{{ weather|length }}</span>
+        </label>
+        <input
+          id="daySlider"
+          type="range"
+          class="form-range"
+          min="1"
+          max="{{ weather|length }}"
+          value="{{ weather|length }}"
+        >
+      </div>
+      <div class="row" id="forecastCards">
+        {% for day in weather %}
+          <div class="col-md-3 mb-3 forecast-day" data-day="{{ forloop.counter }}">
+            <div class="card text-center">
+              <div class="card-body">
+                {% if day.error %}
+                  <div class="text-danger">{{ day.error }}</div>
+                {% else %}
+                  <strong>{{ day.date }}</strong><br>
+                  <img
+                    src="{% static 'img/weather_icons/' %}{{ day.icon }}"
+                    alt="{{ day.description }}"
+                    width="48" height="48"
+                  ><br>
+                  {{ day.description|capfirst }}<br>
+                  Temp: {{ day.temp }}{{ unit_symbol }}<br>
+                  Humidity: {{ day.humidity }}%
+                {% endif %}
+              </div>
             </div>
           </div>
-        </div>
-      {% endfor %}
+        {% endfor %}
+      </div>
+      {% if user.is_authenticated %}
+        <form method="post" action="{% url 'add_favorite' %}">
+          {% csrf_token %}
+          <input type="hidden" name="city"    value="{{ city_display }}">
+          <input type="hidden" name="country" value="{{ request.GET.country|upper|default:preference.default_country }}">
+          <button class="btn btn-outline-success">Add to Favorites</button>
+        </form>
+      {% endif %}
     </div>
 
-    {% if user.is_authenticated %}
-      <form method="post" action="{% url 'add_favorite' %}">
-        {% csrf_token %}
-        <input type="hidden" name="city" value="{{ city_display }}">
-        <input type="hidden" name="country" value="{{ request.GET.country|upper|default:preference.default_country }}">
-        <button class="btn btn-outline-success">Add to Favorites</button>
-      </form>
-    {% endif %}
-  {% elif searched %}
-    <div class="alert alert-warning mt-3">
-      {{ error_message|default:"No data. Check inputs."|capfirst }}
+    <!-- Hourly chart -->
+    <div id="hourlyForecast" style="display:none;">
+      <hr>
+      <h4>Next 24 Hours</h4>
+      <canvas id="findHourlyChart" height="80"></canvas>
     </div>
   {% endif %}
+
+  {% if searched and error_message %}
+    <div class="alert alert-warning mt-3">{{ error_message|capfirst }}</div>
+  {% endif %}
 </section>
+{% endblock %}
+
+{% block extra_js %}
+  <!-- Chart.js (must be before weather.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
