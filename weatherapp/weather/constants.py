@@ -3,20 +3,32 @@
 """
 weather/constants.py
 
-Shared constants used throughout the weather app, particularly for:
-  - Mapping OpenWeatherMap weather descriptions to local icon images.
-  - Providing a fallback icon for unmatched cases.
-  - Defining the base URL for the 5-day forecast API.
+Centralized constants and configuration for the WeatherWebApp.
+
+Responsibilities:
+  • Specify where local weather icon images live (relative to STATIC_URL).
+  • Map OpenWeatherMap “description” substrings to those icon filenames.
+  • Provide a fallback icon if no description matches.
+  • Declare environment-variable names for API integration.
+  • Compute the OpenWeatherMap API base URL, overrideable via env var.
 """
 
 import os
+from typing import Mapping
 
 # ───────────────────────────────────────────────────────────────────────────────
-# WEATHER ICON MAPPING
-# These substrings (from OpenWeatherMap's 'description') map to icon filenames.
-# The frontend uses these icons from: /static/img/weather_icons/
+# STATIC ASSETS
 # ───────────────────────────────────────────────────────────────────────────────
-ICON_MAP = {
+
+#: Directory (under STATIC_URL) where weather icons are stored.
+ICON_DIR: str = 'img/weather_icons'
+
+# ───────────────────────────────────────────────────────────────────────────────
+# ICON MAP
+# ───────────────────────────────────────────────────────────────────────────────
+
+#: Map of substrings in the OWM "description" → local icon filename.
+ICON_MAP: Mapping[str, str] = {
     'clear':             'clear.png',
     'few clouds':        'few_clouds.png',
     'scattered clouds':  'scattered_clouds.png',
@@ -28,16 +40,28 @@ ICON_MAP = {
     'mist':              'mist.png',
 }
 
-# ───────────────────────────────────────────────────────────────────────────────
-# Default icon filename to use when no ICON_MAP match is found
-# ───────────────────────────────────────────────────────────────────────────────
-DEFAULT_ICON = 'default.png'
+#: Fallback icon filename when no key in ICON_MAP matches.
+DEFAULT_ICON: str = 'default.png'
 
 # ───────────────────────────────────────────────────────────────────────────────
-# Base URL for 5-day/3-hour OpenWeatherMap forecast endpoint
-# You can override via an environment variable OPENWEATHER_BASE_URL
+# ENVIRONMENT VARIABLE NAMES
 # ───────────────────────────────────────────────────────────────────────────────
-OPENWEATHER_BASE = os.environ.get(
-    'OPENWEATHER_BASE_URL',
+
+#: Environment variable name for the OpenWeatherMap API key.
+OPENWEATHER_API_KEY_ENV: str  = 'OPENWEATHER_API_KEY'
+#: Environment variable name for the forecast endpoint override.
+OPENWEATHER_BASE_URL_ENV: str = 'OPENWEATHER_BASE_URL'
+
+# ───────────────────────────────────────────────────────────────────────────────
+# OPENWEATHERMAP ENDPOINT
+# ───────────────────────────────────────────────────────────────────────────────
+
+#: Base URL for the 5-day/3-hour forecast endpoint.
+#: Can be overridden by setting OPENWEATHER_BASE_URL in the environment.
+OPENWEATHER_BASE_URL: str = os.getenv(
+    OPENWEATHER_BASE_URL_ENV,
     'https://api.openweathermap.org/data/2.5/forecast'
 )
+
+#: Legacy alias for backward compatibility.
+OPENWEATHER_BASE: str = OPENWEATHER_BASE_URL
