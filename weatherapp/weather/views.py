@@ -3,15 +3,17 @@
 """
 weather/views.py
 
-Django views for WeatherWebApp:
-  - Class-based views for home, settings, find, map, favorites, about, contact, profile.
-  - Function-based views for login, logout, and AJAX endpoints.
-  - Improved login_view: returns validation errors to template for better UX.
+Contains Django views for the WeatherWebApp.
+This file handles both UI rendering and JSON endpoints.
+
+Modules:
+- Class-based views (CBVs) for templates: Home, Settings, Find, Map, Favorites, etc.
+- Function-based views (FBVs) for login, logout, AJAX calls, and favorites management.
 """
 
 from django.shortcuts import render, redirect
-from django.contrib import messages
 from django.http import JsonResponse
+from django.contrib import messages
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -24,36 +26,47 @@ from .services import WeatherService, WeatherAPIError
 from .utils import get_user_pref
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Class-Based Views (for rendering HTML pages)
+# ─────────────────────────────────────────────────────────────────────────────
+
 class HomeView(TemplateView):
-    """Dashboard view showing welcome message and weather quote."""
+    """Homepage: welcome message, intro card, and weather quotes."""
     template_name = 'weather/home.html'
 
 
 class SettingsView(LoginRequiredMixin, TemplateView):
-    """User settings: default city, country, units, and theme."""
+    """
+    Handles user settings:
+    - Default city, country, temperature unit (C/F), and theme preference.
+    - Saves values to `Preference` model.
+    """
     template_name = 'weather/settings.html'
 
     def get(self, request, *args, **kwargs):
-        pref, _ = get_user_pref(request.user)
-        return self.render_to_response({'preference': pref})
+        preference, _ = get_user_pref(request.user)
+        return self.render_to_response({'preference': preference})
 
     def post(self, request, *args, **kwargs):
-        pref, _ = get_user_pref(request.user)
-        # Update user preferences from submitted form data
-        pref.default_city    = request.POST.get('default_city', '').strip()
-        pref.default_country = request.POST.get('default_country', '').strip().upper()
-        pref.default_unit    = request.POST.get('default_unit', 'metric')
-        pref.default_theme   = request.POST.get('default_theme', 'light')
-        pref.save()
-        messages.success(request, 'Preferences saved.')
-        # Persist theme choice in a cookie for front-end theme manager
-        resp = redirect('settings')
-        resp.set_cookie('theme', pref.default_theme, max_age=365*24*3600)
-        return resp
+        preference, _ = get_user_pref(request.user)
+        preference.default_city = request.POST.get('default_city', '').strip()
+        preference.default_country = request.POST.get('default_country', '').strip().upper()
+        preference.default_unit = request.POST.get('default_unit', 'metric')
+        preference.default_theme = request.POST.get('default_theme', 'light')
+        preference.save()
+
+        messages.success(request, "Preferences updated successfully.")
+        response = redirect('settings')
+        response.set_cookie('theme', preference.default_theme, max_age=365 * 24 * 3600)
+        return response
 
 
 class FindLocationView(LoginRequiredMixin, TemplateView):
-    """Handle “Find by Location” page: search form, daily/hourly forecasts."""
+    """
+    View for searching weather by city/country.
+    - Uses GET parameters or user preferences.
+    - Displays 7-day forecast cards.
+    """
     template_name = 'weather/find_location.html'
 
     def get_context_data(self, **kwargs):
@@ -62,32 +75,33 @@ class FindLocationView(LoginRequiredMixin, TemplateView):
         form = LocationSearchForm(self.request.GET or None)
 
         context.update({
+            'form': form,
             'preference': pref,
             'unit_symbol': unit_symbol,
-            'form': form,
         })
 
-        city_q    = self.request.GET.get('city', '').strip()
+        city_q = self.request.GET.get('city', '').strip()
         country_q = self.request.GET.get('country', '').strip().upper()
 
-        # Only run search when city is provided or a default exists
         if city_q or pref.default_city:
-            context['searched'] = True
             try:
-                cards, city_display, _, lat, lng = WeatherService.by_city(
+                cards, city_name, _, lat, lng = WeatherService.by_city(
                     city_q or pref.default_city,
                     country_q or pref.default_country or None,
                     units=pref.default_unit
                 )
                 context.update({
+                    'searched': True,
                     'weather': cards,
-                    'city_display': city_display,
+                    'city_display': city_name,
                     'find_lat': lat,
                     'find_lng': lng,
                 })
             except WeatherAPIError as e:
-                # Pass API error message into template
-                context['error_message'] = str(e)
+                context.update({
+                    'searched': True,
+                    'error_message': str(e)
+                })
         else:
             context['searched'] = False
 
@@ -95,34 +109,40 @@ class FindLocationView(LoginRequiredMixin, TemplateView):
 
 
 class MapView(LoginRequiredMixin, TemplateView):
-    """Interactive map page – JS handles data fetching via AJAX."""
+    """
+    Displays an interactive Leaflet map.
+    JavaScript on this page handles search, rendering forecasts, and AJAX.
+    """
     template_name = 'weather/map.html'
 
 
 class FavoritesView(LoginRequiredMixin, TemplateView):
-    """Display and manage user's favorite locations with brief forecasts."""
+    """
+    Renders the Favorites page, showing a 2-day forecast (today/tomorrow)
+    for each saved favorite location.
+    """
     template_name = 'weather/favorites.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         pref, unit_symbol = get_user_pref(self.request.user)
-        favorites = []
+        favorites_data = []
 
         for fav in FavoriteLocation.objects.filter(user=self.request.user):
             try:
-                # Fetch only today and tomorrow's forecasts
                 cards, *_ = WeatherService.by_city(
-                    fav.city_name, fav.country_code or None,
+                    fav.city_name,
+                    fav.country_code or None,
                     days=2,
                     units=pref.default_unit
                 )
-                today    = cards[0]
+                today = cards[0]
                 tomorrow = cards[1] if len(cards) > 1 else cards[0]
             except WeatherAPIError as e:
-                # Represent API failure in both slots
-                today = tomorrow = type('E', (), {'error': str(e)})()
+                error_card = type('ErrorCard', (), {'error': str(e)})
+                today = tomorrow = error_card()
 
-            favorites.append({
+            favorites_data.append({
                 'id': fav.id,
                 'city': fav.city_name,
                 'country': fav.country_code,
@@ -132,92 +152,109 @@ class FavoritesView(LoginRequiredMixin, TemplateView):
 
         context.update({
             'unit_symbol': unit_symbol,
-            'favorite_weather': favorites,
+            'favorite_weather': favorites_data,
         })
         return context
 
 
+class AboutView(TemplateView):
+    """Static “About” page describing the app."""
+    template_name = 'weather/about.html'
+
+
+class ContactView(TemplateView):
+    """Static contact form (prints to console during development)."""
+    template_name = 'weather/contact.html'
+
+
+class ProfileView(LoginRequiredMixin, TemplateView):
+    """User profile overview (non-editable for now)."""
+    template_name = 'weather/profile.html'
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AJAX Views – JSON endpoints for map/weather functionality
+# ─────────────────────────────────────────────────────────────────────────────
+
 @login_required
 def map_weather_data(request):
     """
-    AJAX endpoint for daily forecast.
-    Returns JSON:
+    Returns daily forecast for map coordinates as JSON.
+    Expects: GET lat & lng
+    Response:
       {
-        'forecast': [ {date, description, temp, humidity, icon, error}, … ],
-        'location': 'City Name',
-        'country': 'CC',
-        'unit': '°C' or '°F'
+        'forecast': [card, card, …],
+        'location': 'City',
+        'country': 'GR',
+        'unit': '°C'
       }
     """
-    lat = request.GET.get('lat')
-    lng = request.GET.get('lng')
     try:
-        # Get user’s unit preference (and symbol)
+        lat = float(request.GET.get('lat'))
+        lng = float(request.GET.get('lng'))
         pref, unit_symbol = get_user_pref(request.user)
 
-        # Call the service and unpack its tuple
         cards, city, country, _, _ = WeatherService.by_coords(
-            float(lat),
-            float(lng),
-            units=pref.default_unit
+            lat, lng, units=pref.default_unit
         )
-
-        # Serialize dataclass instances to plain dicts
-        forecast = [card.__dict__ for card in cards]
+        forecast_data = [card.__dict__ for card in cards]
 
         return JsonResponse({
-            'forecast': forecast,
+            'forecast': forecast_data,
             'location': city,
             'country': country,
-            'unit':     unit_symbol,
+            'unit': unit_symbol
         })
+
     except WeatherAPIError as e:
-        # Known API errors: return JSON with error message
         return JsonResponse({'error': str(e)}, status=400)
     except Exception as e:
-        # Catch-all: avoid returning HTML error pages to the frontend
-        return JsonResponse({'error': 'Server error: ' + str(e)}, status=500)
+        return JsonResponse({'error': f'Server error: {e}'}, status=500)
+
 
 @login_required
 def map_hourly_data(request):
     """
-    AJAX endpoint for next‑24h hourly data.
-    Returns JSON:
+    Returns next 24 hours of forecast as JSON.
+    Expects: GET lat & lng
+    Response:
       {
-        'hourly': [ {dt: 1234567890, temp: 23}, … ],
-        'unit': '°C' or '°F'
+        'hourly': [{dt, temp}, …],
+        'unit': '°C'
       }
     """
-    lat = request.GET.get('lat')
-    lng = request.GET.get('lng')
     try:
+        lat = float(request.GET.get('lat'))
+        lng = float(request.GET.get('lng'))
         pref, unit_symbol = get_user_pref(request.user)
 
-        hourly = WeatherService.hourly_by_coords(
-            float(lat),
-            float(lng),
-            units=pref.default_unit
+        hourly_data = WeatherService.hourly_by_coords(
+            lat, lng, units=pref.default_unit
         )
 
         return JsonResponse({
-            'hourly': hourly,
-            'unit':   unit_symbol,
+            'hourly': hourly_data,
+            'unit': unit_symbol
         })
 
     except WeatherAPIError as e:
         return JsonResponse({'error': str(e)}, status=400)
-
     except Exception as e:
-        return JsonResponse({'error': 'Server error: ' + str(e)}, status=500)
+        return JsonResponse({'error': f'Server error: {e}'}, status=500)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Favorites (Add/Remove)
+# ─────────────────────────────────────────────────────────────────────────────
 
 @login_required
 def add_favorite(request):
     """
-    Handle “Add to Favorites” form POST.
-    Creates FavoriteLocation if not already exists.
+    Adds a new FavoriteLocation from POST data.
+    If the city is already saved by the user, does nothing.
     """
     if request.method == 'POST':
-        city    = request.POST.get('city')
+        city = request.POST.get('city')
         country = request.POST.get('country') or None
         FavoriteLocation.objects.get_or_create(
             user=request.user,
@@ -225,63 +262,49 @@ def add_favorite(request):
             country_code=country
         )
         messages.success(request, f'{city} added to favorites.')
-    # Redirect back to referring page (home/map/find)
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 
 @login_required
 def remove_favorite(request, favorite_id):
     """
-    Handle “Remove” action for a favorite location.
+    Deletes a favorite location by ID (if owned by user).
     """
-    FavoriteLocation.objects.filter(id=favorite_id, user=request.user).delete()
+    FavoriteLocation.objects.filter(
+        id=favorite_id,
+        user=request.user
+    ).delete()
     messages.success(request, 'Favorite removed.')
     return redirect('favorites')
 
 
-class AboutView(TemplateView):
-    """Static “About” page."""
-    template_name = 'weather/about.html'
-
-
-class ContactView(TemplateView):
-    """Contact form page – no custom POST handling (emails printed to console)."""
-    template_name = 'weather/contact.html'
-
+# ─────────────────────────────────────────────────────────────────────────────
+# Authentication Views
+# ─────────────────────────────────────────────────────────────────────────────
 
 def login_view(request):
     """
-    Custom login view:
-      - Uses Django’s AuthenticationForm.
-      - On failure, captures non-field errors and passes 'error' into template.
+    Custom login with error handling.
+    Returns login.html with error message if invalid credentials.
     """
     error = None
-
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             login(request, form.get_user())
             return redirect('home')
-        else:
-            # Extract authentication errors (e.g. invalid credentials)
-            error = form.non_field_errors().as_text()
+        error = form.non_field_errors().as_text()
     else:
-        form = AuthenticationForm(request)
-
+        form = AuthenticationForm()
     return render(request, 'weather/login.html', {
         'form': form,
-        'error': error,
+        'error': error
     })
 
 
 def logout_view(request):
     """
-    Log the user out and redirect to home.
+    Log out user and redirect to home.
     """
     logout(request)
     return redirect('home')
-
-
-class ProfileView(LoginRequiredMixin, TemplateView):
-    """User profile page (view-only)."""
-    template_name = 'weather/profile.html'
