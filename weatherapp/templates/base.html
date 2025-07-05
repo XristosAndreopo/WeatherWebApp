@@ -3,7 +3,12 @@
 {% now "Y" as now %}
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"
+      data-theme="{% if user.is_authenticated %}
+                    {{ request.COOKIES.theme|default:user.preference.default_theme }}
+                  {% else %}
+                    {{ request.COOKIES.theme|default:'light' }}
+                  {% endif %}">
 <head>
   <meta charset="UTF-8">
   <title>WeatherApp</title>
@@ -15,11 +20,10 @@
   <!-- Leaflet for interactive maps -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
-  <!-- Theme overrides -->
+  <!-- Theme CSS -->
   <link rel="stylesheet" href="{% static 'css/theme.css' %}">
 
   <style>
-    /* Sidebar & layout tweaks */
     body { min-height:100vh; display:flex; flex-direction:column; }
     #sidebar { height:100vh; position:fixed; width:220px; background:#f8f9fa; padding-top:20px; }
     #main-content { margin-left:240px; padding:20px; }
@@ -31,13 +35,7 @@
   {% block extra_head %}{% endblock %}
 </head>
 
-<body
-  data-theme="{% if user.is_authenticated %}
-                {{ request.COOKIES.theme|default:user.preference.default_theme }}
-              {% else %}
-                {{ request.COOKIES.theme|default:'light' }}
-              {% endif %}"
->
+<body>
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
@@ -104,7 +102,6 @@
           &copy; {{ now }} Christos Andreopoulos
         </div>
         <div class="col-md-4">
-          <!-- Social icons -->
           <a href="https://github.com/XristosAndreopo" target="_blank" class="me-2" title="GitHub">
             <img src="{% static 'svg/github-mark.svg' %}" alt="GitHub" width="22">
           </a>
@@ -119,27 +116,23 @@
     </div>
   </footer>
 
-  <!-- Bootstrap JS & Leaflet -->
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-  <!-- Inject AJAX URLs & CSRF for our modules -->
   <script>
     window.MAP_WEATHER_URL = "{% url 'map_weather_data' %}";
     window.MAP_HOURLY_URL  = "{% url 'map_hourly_data' %}";
     window.STATIC_URL      = "{% static '' %}";
-    // Grab CSRF token from the first form in the page
-    window.CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    window.CSRF_TOKEN      = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
   </script>
 
-  <!-- Our app modules (using ES modules avoids polluting the global scope) -->
   <script type="module" src="{% static 'js/dashboard.js' %}"></script>
   <script type="module" src="{% static 'js/map.js' %}"></script>
   <script type="module" src="{% static 'js/find.js' %}"></script>
   <script src="{% static 'js/theme.js' %}"></script>
 
   {% block extra_js %}
-    <!-- Chart.js is only needed on pages that render a chart -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   {% endblock %}
 </body>
