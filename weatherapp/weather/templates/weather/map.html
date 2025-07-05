@@ -5,13 +5,14 @@
 <section class="container my-5">
   <h2>Interactive Weather Map</h2>
 
-  <!-- Location search form -->
-  <form class="row gx-2 gy-3 mb-4 align-items-end">
+  {# Use a real form so Enter and button both fire our JS #}
+  <form id="mapSearchForm" class="row gx-2 gy-3 mb-4 align-items-end">
     <div class="col-md-5">
       <label for="cityInput" class="form-label">City</label>
       <input
         type="text"
         id="cityInput"
+        name="city"
         class="form-control"
         placeholder="e.g. London"
         value="{{ default_city }}"
@@ -22,6 +23,7 @@
       <input
         type="text"
         id="countryInput"
+        name="country"
         class="form-control"
         placeholder="e.g. GB / ISO2‑letter code"
         maxlength="10"
@@ -29,19 +31,17 @@
       >
     </div>
     <div class="col-md-2">
-      <button id="searchBtn" class="btn btn-primary w-100">Search</button>
+      <button type="submit" id="searchBtn" class="btn btn-primary w-100">
+        Search
+      </button>
     </div>
   </form>
 
-  <!-- The map itself -->
+  <!-- Map itself -->
   <div id="map" style="height:400px;"></div>
 
   <!-- Forecast toggle (hidden until first fetch) -->
-  <div
-    id="mapForecastControls"
-    class="dropdown my-4"
-    style="display:none;"
-  >
+  <div id="mapForecastControls" class="dropdown my-4" style="display:none;">
     <button
       class="btn btn-primary dropdown-toggle"
       type="button"
@@ -70,6 +70,7 @@
   </div>
 
   {% if user.is_authenticated %}
+    <!-- initially hidden; JS will populate & show it -->
     <form
       id="mapAddFavForm"
       method="post"
@@ -77,15 +78,16 @@
       style="display:none;"
     >
       {% csrf_token %}
-      <input type="hidden" name="city" id="mapAddFavCity">
+      <input type="hidden" name="city"    id="mapAddFavCity">
       <input type="hidden" name="country" id="mapAddFavCountry">
-      <button class="btn btn-outline-success mt-3">Add to Favorites</button>
+      <button class="btn btn-outline-success mt-3">
+        Add to Favorites
+      </button>
     </form>
   {% endif %}
 </section>
 {% endblock %}
 
 {% block extra_js %}
-  <!-- Chart.js from CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}

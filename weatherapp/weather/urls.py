@@ -1,36 +1,38 @@
-"""weather/urls.py - URL routes for the weather app"""
+# File: weather/urls.py
+
+"""
+weather/urls.py
+
+URL routing for the WeatherWebApp:
+  - Class-based views: home, settings, find, map, favorites, about, contact, profile.
+  - Function-based endpoints: login, logout, AJAX data, add/remove favorites.
+"""
 
 from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Dashboard
-    path('', views.home, name='home'),
+    # Dashboard and static pages
+    path('',                    views.HomeView.as_view(),        name='home'),
+    path('about/',              views.AboutView.as_view(),       name='about'),
+    path('contact/',            views.ContactView.as_view(),     name='contact'),
+    path('profile/',            views.ProfileView.as_view(),     name='profile'),
 
-    # User settings
-    path('settings/', views.settings_view, name='settings'),
+    # User settings & search
+    path('settings/',           views.SettingsView.as_view(),    name='settings'),
+    path('find/',               views.FindLocationView.as_view(),name='find_location'),
+    path('map/',                views.MapView.as_view(),         name='map'),
 
-    # “Find by Location”
-    path('find/', views.find_location, name='find_location'),
+    # AJAX endpoints for map data
+    path('map_weather_data/',   views.map_weather_data,          name='map_weather_data'),
+    path('map_hourly_data/',    views.map_hourly_data,           name='map_hourly_data'),
 
-    # Interactive map & its AJAX endpoints
-    path('map/', views.map_view, name='map'),
-    path('map_weather_data/', views.map_weather_data, name='map_weather_data'),
-
-    # **New**: Next‑24‑hours endpoint for Chart.js on the map
-    path('map_hourly_data/', views.map_hourly_data, name='map_hourly_data'),
-
-    # Favorites CRUD
-    path('add_favorite/', views.add_favorite, name='add_favorite'),
-    path('favorites/', views.favorites, name='favorites'),
+    # Favorites management
+    path('add_favorite/',       views.add_favorite,              name='add_favorite'),
+    path('favorites/',          views.FavoritesView.as_view(),   name='favorites'),
     path('remove_favorite/<int:favorite_id>/', views.remove_favorite, name='remove_favorite'),
 
-    # Static pages
-    path('about/', views.about, name='about'),
-    path('contact/', views.contact, name='contact'),
-
-    # Auth
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
-    path('profile/', views.profile, name='profile'),
+    # Authentication
+    path('login/',              views.login_view,                name='login'),
+    path('logout/',             views.logout_view,               name='logout'),
 ]

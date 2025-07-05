@@ -1,0 +1,9 @@
+{# Reusable “Add to Favorites” form – expects `city` and `country` in context #}
+<form method="post" action="{% url 'add_favorite' %}">
+  {% csrf_token %}
+  <input type="hidden" name="city"    value="{{ city }}">
+  <input type="hidden" name="country" value="{{ country }}">
+  <button class="btn btn-outline-success mt-3">
+    Add to Favorites
+  </button>
+</form>

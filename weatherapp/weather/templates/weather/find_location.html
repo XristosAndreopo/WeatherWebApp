@@ -15,7 +15,9 @@
     <div class="col-md-5">
       <label for="city" class="form-label">City</label>
       <input
-        id="city" name="city" type="text"
+        id="city"
+        name="city"
+        type="text"
         class="form-control"
         placeholder="e.g. London"
         value="{{ request.GET.city|default:preference.default_city }}"
@@ -24,7 +26,9 @@
     <div class="col-md-5">
       <label for="country" class="form-label">Country (optional)</label>
       <input
-        id="country" name="country" type="text"
+        id="country"
+        name="country"
+        type="text"
         class="form-control"
         placeholder="e.g. GB / ISO 2‑letter code"
         maxlength="10"
@@ -32,12 +36,14 @@
       >
     </div>
     <div class="col-md-2">
-      <button type="submit" class="btn btn-primary w-100">Find</button>
+      <button type="submit" class="btn btn-primary w-100">
+        Find
+      </button>
     </div>
   </form>
 
   {% if searched %}
-    <!-- Dropdown to choose forecast type -->
+    <!-- Forecast toggle -->
     <div class="dropdown mb-3">
       <button
         class="btn btn-primary dropdown-toggle"
@@ -58,6 +64,7 @@
     <div id="dailyForecast">
       <hr>
       <h4>Forecast for {{ city_display }}</h4>
+
       <div class="mb-3">
         <label for="daySlider" class="form-label">
           Days to show: <span id="sliderValue">{{ weather|length }}</span>
@@ -71,6 +78,7 @@
           value="{{ weather|length }}"
         >
       </div>
+
       <div class="row" id="forecastCards">
         {% for day in weather %}
           <div class="col-md-3 mb-3 forecast-day" data-day="{{ forloop.counter }}">
@@ -96,16 +104,19 @@
       </div>
 
       {% if user.is_authenticated %}
+        <!-- Static “Add to Favorites” form – now guaranteed to render -->
         <form method="post" action="{% url 'add_favorite' %}">
           {% csrf_token %}
           <input type="hidden" name="city"    value="{{ city_display }}">
-          <input type="hidden" name="country" value="{{ request.GET.country|upper|default:preference.default_country }}">
-          <button class="btn btn-outline-success mt-3">Add to Favorites</button>
+          <input type="hidden" name="country" value="{{ request.GET.country|upper }}">
+          <button class="btn btn-outline-success mt-3">
+            Add to Favorites
+          </button>
         </form>
       {% endif %}
     </div>
 
-    <!-- Hourly chart -->
+    <!-- Hourly forecast -->
     <div id="hourlyForecast" style="display:none;">
       <hr>
       <h4>Next 24 Hours</h4>
@@ -115,20 +126,23 @@
         <form method="post" action="{% url 'add_favorite' %}">
           {% csrf_token %}
           <input type="hidden" name="city"    value="{{ city_display }}">
-          <input type="hidden" name="country" value="{{ request.GET.country|upper|default:preference.default_country }}">
-          <button class="btn btn-outline-success mt-3">Add to Favorites</button>
+          <input type="hidden" name="country" value="{{ request.GET.country|upper }}">
+          <button class="btn btn-outline-success mt-3">
+            Add to Favorites
+          </button>
         </form>
       {% endif %}
     </div>
   {% endif %}
 
   {% if searched and error_message %}
-    <div class="alert alert-warning mt-3">{{ error_message|capfirst }}</div>
+    <div class="alert alert-warning mt-3">
+      {{ error_message|capfirst }}
+    </div>
   {% endif %}
 </section>
 {% endblock %}
 
 {% block extra_js %}
-  <!-- Chart.js (must be before weather.js) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}

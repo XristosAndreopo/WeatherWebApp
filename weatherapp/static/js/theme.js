@@ -1,85 +1,67 @@
-// weatherapp/static/js/theme.js
+// File: static/js/theme.js
+// ───────────────────────────────────────────────────────────────────────────────
+// Module: ThemeManager
+//
+// Responsibilities:
+//   • Read the “theme” cookie (or default to “light”) and apply it to <body>.
+//   • On the settings page, watch for changes to the <select id="defaultTheme">,
+//     set the cookie, and apply the new theme live.
+//   • Ensures the user’s choice is persisted (365-day cookie).
+// ───────────────────────────────────────────────────────────────────────────────
 
-// --- Cookie helpers ---
-function getCookie(name) {
-  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-  return match ? match[2] : null;
-}
-
-function setCookie(name, value, days = 365) {
-  let expires = '';
-  if (days) {
-    const d = new Date();
-    d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
-    expires = ';expires=' + d.toUTCString();
+const ThemeManager = (() => {
+  /**
+   * Read a named cookie’s value, or null if missing.
+   * @param {string} name
+   * @returns {string|null}
+   */
+  function getCookie(name) {
+    const match = document.cookie.match(
+      new RegExp('(^| )' + name + '=([^;]+)')
+    );
+    return match ? match[2] : null;
   }
-  document.cookie = name + '=' + value + expires + ';path=/';
-}
 
-// --- Apply theme attribute ---
-function applyTheme(theme) {
-  document.body.setAttribute('data-theme', theme);
-}
-
-// --- On load, sync & wire up ---
-document.addEventListener('DOMContentLoaded', function() {
-  // 1) Apply from cookie (or default 'light')
-  const theme = getCookie('theme') || 'light';
-  applyTheme(theme);
-
-  // 2) If on Settings, hook up the <select> + button
-  const selectEl = document.getElementById('themeSelect');
-  const btn      = document.getElementById('applyTheme');
-  if (selectEl && btn) {
-    selectEl.value = theme;
-    btn.addEventListener('click', function() {
-      const newTheme = selectEl.value;
-      setCookie('theme', newTheme, 365);
-      applyTheme(newTheme);
-    });
+  /**
+   * Write a cookie that lives `days` days (defaults to 365).
+   * @param {string} name
+   * @param {string} value
+   * @param {number} days
+   */
+  function setCookie(name, value, days = 365) {
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = `${name}=${value};expires=${expires};path=/`;
   }
-});
 
-/* ------------------------------------------------------------------
-   Toggle‑style for the Find‑by‑Location Daily / Next 24 Hrs radios
------------------------------------------------------------------- */
-#findSection .form-check-input {
-  /* hide the native radio circle */
-  display: none;
-}
+  /**
+   * Apply a theme by setting data-theme on <body>.
+   * @param {string} theme
+   */
+  function apply(theme) {
+    document.body.setAttribute('data-theme', theme);
+  }
 
-#findSection .form-check-inline .form-check-label {
-  display: inline-block;
-  padding: .4rem 1rem;
-  margin: 0;                       /* remove Bootstrap’s default spacing */
-  border: 1px solid #0d6efd;      /* blue border */
-  color: #0d6efd;                 /* blue text */
-  cursor: pointer;
-  user-select: none;
-  transition: background .2s, color .2s;
-}
+  // When the DOM is ready, apply the saved theme and wire up the selector
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1) Read saved cookie or default to 'light'
+    const current = getCookie('theme') || 'light';
+    apply(current);
 
-/* Remove double borders between the two labels */
-#findSection .form-check-inline:not(:last-child) .form-check-label {
-  border-right: none;
-}
+    // 2) Look for your settings dropdown by its ID
+    const sel = document.getElementById('defaultTheme');
+    if (sel) {
+      // Initialize the select to the current theme
+      sel.value = current;
 
-/* Round the ends */
-#findSection .form-check-label[for="dailyToggle"] {
-  border-radius: .25rem 0 0 .25rem;
-}
-#findSection .form-check-label[for="hourlyToggle"] {
-  border-radius: 0 .25rem .25rem 0;
-}
+      // On change, persist the new theme and apply it immediately
+      sel.addEventListener('change', (e) => {
+        const newTheme = e.target.value;
+        setCookie('theme', newTheme);
+        apply(newTheme);
+      });
+    }
+  });
 
-/* Hover state */
-#findSection .form-check-inline .form-check-label:hover {
-  background: rgba(13, 110, 253, .1);
-}
-
-/* Checked state: fill with blue, white text */
-#findSection #dailyToggle:checked + label[for="dailyToggle"],
-#findSection #hourlyToggle:checked + label[for="hourlyToggle"] {
-  background-color: #0d6efd;
-  color: #fff;
-}
+  // Expose for debugging or manual calls if needed
+  return { getCookie, setCookie, apply };
+})();

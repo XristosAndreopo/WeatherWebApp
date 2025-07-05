@@ -39,7 +39,7 @@
         <div class="mb-3">
           <label for="defaultUnit" class="form-label">Units</label>
           <select id="defaultUnit" name="default_unit" class="form-select">
-            <option value="metric"   {% if preference.default_unit == 'metric'   %}selected{% endif %}>Metric (°C)</option>
+            <option value="metric"   {% if preference.default_unit == 'metric' %}selected{% endif %}>Metric (°C)</option>
             <option value="imperial" {% if preference.default_unit == 'imperial' %}selected{% endif %}>Imperial (°F)</option>
           </select>
         </div>
@@ -48,11 +48,11 @@
         <div class="mb-4">
           <label for="defaultTheme" class="form-label">Theme</label>
           <select id="defaultTheme" name="default_theme" class="form-select">
-            <option value="light"           {% if preference.default_theme == 'light'           %}selected{% endif %}>🌞 Light</option>
-            <option value="light-dark"      {% if preference.default_theme == 'light-dark'      %}selected{% endif %}>🌗 Light Dark</option>
-            <option value="dracula"         {% if preference.default_theme == 'dracula'         %}selected{% endif %}>🧛 Dracula</option>
-            <option value="high-contrast"   {% if preference.default_theme == 'high-contrast'   %}selected{% endif %}>⚫ High‑Contrast</option>
-            <option value="sepia"           {% if preference.default_theme == 'sepia'           %}selected{% endif %}>📜 Sepia</option>
+            <option value="light"           {% if preference.default_theme == 'light' %}selected{% endif %}>🌞 Light</option>
+            <option value="light-dark"      {% if preference.default_theme == 'light-dark' %}selected{% endif %}>🌗 Light Dark</option>
+            <option value="dracula"         {% if preference.default_theme == 'dracula' %}selected{% endif %}>🧛 Dracula</option>
+            <option value="high-contrast"   {% if preference.default_theme == 'high-contrast' %}selected{% endif %}>⚫ High‑Contrast</option>
+            <option value="sepia"           {% if preference.default_theme == 'sepia' %}selected{% endif %}>📜 Sepia</option>
           </select>
         </div>
 
