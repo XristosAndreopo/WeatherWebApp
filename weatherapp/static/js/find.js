@@ -1,19 +1,34 @@
 // File: static/js/find.js
 // ───────────────────────────────────────────────────────────────────────────────
-// Module: Find‑by‑Location toggle (self‑initializing)
+// Module: Find‑by‑Location (with spinner & debounce)
+//
 // Responsibilities:
-//   - Switch between daily and hourly forecasts on the “Find by Location” page.
-//   - Fetch & render hourly data via AJAX when “Next 24 Hrs” is selected.
-// Self‑init logic at the bottom ensures it runs without any extra bootstrapping.
+//   1. Toggle daily/hourly forecast views.
+//   2. Show spinner while loading hourly data.
+//   3. Debounce AJAX fetch to avoid rapid repeat calls.
+//   4. Render Chart.js line chart for hourly temps.
 // ───────────────────────────────────────────────────────────────────────────────
 
 /**
- * Read city/coords from #findSection, wire up dropdown & fetch chart.
+ * Debounce helper: delay execution until delay ms have passed since last call.
+ * @param {Function} fn
+ * @param {number} delay
+ * @returns {Function}
  */
-function initFindDropdown() {
-  const container   = document.getElementById('findSection');
-  if (!container) return;  // Bail if we're not on the Find page
+function debounce(fn, delay = 300) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
 
+function initFindDropdown() {
+  const container = document.getElementById('findSection');
+  if (!container) return;  // Not on Find page
+
+  // DOM refs
+  const spinner     = document.getElementById('findSpinner');
   const dropdownBtn = container.querySelector('#forecastDropdown');
   const items       = container.querySelectorAll('.dropdown-item');
   const dailyDiv    = document.getElementById('dailyForecast');
@@ -22,36 +37,35 @@ function initFindDropdown() {
   const ctx         = canvas?.getContext('2d');
   let chart         = null;
 
-  // Read the server‑injected latitude/longitude
+  // Coordinates injected via data attributes
   const lat = parseFloat(container.dataset.lat);
   const lng = parseFloat(container.dataset.lng);
 
+  function showSpinner() { spinner.style.display = ''; }
+  function hideSpinner() { spinner.style.display = 'none'; }
+
   /**
-   * Fetch next 24h hourly data and render a Chart.js line chart.
+   * Fetch next‑24h hourly data and render chart.
    */
   async function fetchAndRenderHourly() {
     if (isNaN(lat) || isNaN(lng) || !ctx) return;
+    showSpinner();
 
     try {
-      const res  = await fetch(
-        `${window.MAP_HOURLY_URL}?lat=${lat}&lng=${lng}`, {
-          credentials: 'same-origin',
-          headers: { 'X-CSRFToken': window.CSRF_TOKEN }
-        }
-      );
+      const res  = await fetch(`${window.MAP_HOURLY_URL}?lat=${lat}&lng=${lng}`, {
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': window.CSRF_TOKEN }
+      });
       const body = await res.json();
-      if (!body.hourly) return;
+      if (!body.hourly) throw new Error('No hourly data');
 
-      // Prepare data arrays
       const labels = body.hourly.map(h => {
         const d = new Date(h.dt * 1000);
         return d.getHours().toString().padStart(2, '0') + ':00';
       });
       const temps = body.hourly.map(h => h.temp);
 
-      // Destroy any existing chart to avoid memory leaks
       if (chart) chart.destroy();
-
       chart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -65,18 +79,22 @@ function initFindDropdown() {
         },
         options: {
           scales: {
-            x: { title: { display: true, text: 'Hour' } },
-            y: { title: { display: true, text: `Temp (${body.unit})` } }
+            x: { title: { display:true, text:'Hour' } },
+            y: { title: { display:true, text:`Temp (${body.unit})` } }
           },
-          plugins: { legend: { display: false } }
+          plugins: { legend: { display:false } }
         }
       });
     } catch (err) {
-      console.error('Error fetching hourly forecast:', err);
+      console.error('❌ Find hourly error:', err);
+    } finally {
+      hideSpinner();
     }
   }
 
-  // Wire up click on each dropdown item
+  const debouncedLoad = debounce(fetchAndRenderHourly, 300);
+
+  // Wire up dropdown items
   items.forEach(item => {
     item.addEventListener('click', e => {
       e.preventDefault();
@@ -89,18 +107,17 @@ function initFindDropdown() {
       } else {
         dailyDiv.style.display  = 'none';
         hourlyDiv.style.display = '';
-        fetchAndRenderHourly();
+        debouncedLoad();
       }
     });
   });
 
-  // Initialise: show daily, hide hourly
+  // Initialize on daily view
   dailyDiv.style.display  = '';
   hourlyDiv.style.display = 'none';
 }
 
-// ─── Self‑initialize ──────────────────────────────────────────────────────────
-// If the DOM is still loading, wait for it; otherwise run immediately.
+// Self‑initialize
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initFindDropdown);
 } else {

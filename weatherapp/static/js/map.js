@@ -1,34 +1,41 @@
 // File: static/js/map.js
 // ───────────────────────────────────────────────────────────────────────────────
-// Module: Interactive Weather Map (self‑initializing)
+// Module: Interactive Weather Map (with debounce & spinner)
 //
 // Responsibilities:
-//   1. Initialize a Leaflet map with a draggable marker.
-//   2. Geocode user-entered city/country via Nominatim on form submit.
-//   3. Fetch & render daily forecast cards via AJAX.
-//   4. Fetch & render hourly temperature chart via AJAX.
-//   5. Wire up map-click and marker-drag events to reload forecasts.
-//   6. Preload a forecast for the form’s default city on page load.
-//
-// Analytical notes:
-//   - We log key steps so you can trace behavior in DevTools.
-//   - We always run `initialSearch()` after setup so the map page
-//     shows a forecast immediately for your default city.
+//   1. Initialize Leaflet map + draggable marker.
+//   2. Debounce map interactions to limit API calls.
+//   3. Show/hide spinner during daily forecast fetch.
+//   4. Render daily cards and hourly chart via AJAX.
+//   5. Lazy‑load icons in generated HTML.
 // ───────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Debounce helper: delay execution until `delay`ms
+ * have passed since last invocation.
+ */
+function debounce(fn, delay = 500) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
 
 async function initWeatherMap() {
   console.log('⚙️ initWeatherMap running…');
 
-  // 1) Ensure Leaflet & map container exist
+  // Preconditions
   if (typeof L === 'undefined' || !document.getElementById('map')) {
-    console.warn('Leaflet or #map container missing; aborting map init.');
+    console.warn('Leaflet or #map missing; aborting.');
     return;
   }
 
-  // 2) Grab DOM elements
+  // DOM refs
   const form            = document.getElementById('mapSearchForm');
   const cityInput       = document.getElementById('cityInput');
   const countryInput    = document.getElementById('countryInput');
+  const spinner         = document.getElementById('weatherSpinner');
   const resultEl        = document.getElementById('weatherResult');
   const favForm         = document.getElementById('mapAddFavForm');
   const favCityField    = document.getElementById('mapAddFavCity');
@@ -39,60 +46,63 @@ async function initWeatherMap() {
   const hourlyContainer = document.getElementById('hourlyMapChartContainer');
   const ctxHourly       = document.getElementById('hourlyMapChart')?.getContext('2d');
 
-  console.log('DOM refs initialized:', {
-    form, cityInput, countryInput, resultEl, controlsWrapper, controlsBtn
-  });
-
   let hourlyChart = null;
-  let lastCoords = { lat: null, lng: null };
+  let lastCoords  = { lat: null, lng: null };
 
-  // 3) Initialize Leaflet map & marker
-  const map = L.map('map').setView([51.505, -0.09], 4);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18
-  }).addTo(map);
+  // Initialize map & marker
+  const map    = L.map('map').setView([51.505, -0.09], 4);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
   const marker = L.marker([51.505, -0.09], { draggable: true }).addTo(map);
 
-  // 4) Render daily forecast cards
-  function renderDaily(data) {
-    let html = `<h4>Forecast for ${data.location}</h4><div class="row">`;
-    data.forecast.forEach(day => {
-      html += `<div class="col-md-3 mb-3"><div class="card text-center"><div class="card-body">`;
-      if (day.error) {
-        html += `<div class="text-danger">${day.error}</div>`;
-      } else {
-        html += `
-          <strong>${day.date}</strong><br>
-          <img src="${window.STATIC_URL}img/weather_icons/${day.icon}" width="48" height="48"><br>
-          ${day.description.charAt(0).toUpperCase() + day.description.slice(1)}<br>
-          Temp: ${day.temp}${data.unit}<br>
-          Humidity: ${day.humidity}%
-        `;
-      }
-      html += `</div></div></div>`;
-    });
-    html += `</div>`;
-    resultEl.innerHTML = html;
-  }
+  // Spinner controls
+  function showSpinner() { spinner.style.display = ''; resultEl.style.display = 'none'; }
+  function hideSpinner() { spinner.style.display = 'none'; resultEl.style.display = ''; }
 
-  // 5) Fetch & display daily forecast via AJAX
+  /**
+   * Fetch & render the daily forecast.
+   * @param {number} lat
+   * @param {number} lng
+   */
   async function fetchDaily(lat, lng) {
     lastCoords = { lat, lng };
-    console.log(`🔄 fetchDaily(${lat}, ${lng})`);
+    showSpinner();
+
     try {
-      const res  = await fetch(
-        `${window.MAP_WEATHER_URL}?lat=${lat}&lng=${lng}`, {
-          credentials: 'same-origin',
-          headers: { 'X-CSRFToken': window.CSRF_TOKEN }
+      const res  = await fetch(`${window.MAP_WEATHER_URL}?lat=${lat}&lng=${lng}`, {
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': window.CSRF_TOKEN }
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      renderDaily(data);
+      // Build HTML
+      let html = `<h4>Forecast for ${data.location}</h4><div class="row">`;
+      data.forecast.forEach(day => {
+        html += `
+          <div class="col-md-3 mb-3">
+            <div class="card text-center">
+              <div class="card-body">
+                ${day.error
+                  ? `<div class="text-danger">${day.error}</div>`
+                  : `
+                    <strong>${day.date}</strong><br>
+                    <img loading="lazy"
+                         src="${window.STATIC_URL}img/weather_icons/${day.icon}"
+                         alt="${day.description}" width="48" height="48"><br>
+                    ${day.description.charAt(0).toUpperCase()+day.description.slice(1)}<br>
+                    Temp: ${day.temp}${data.unit}<br>
+                    Humidity: ${day.humidity}%
+                  `}
+              </div>
+            </div>
+          </div>`;
+      });
+      html += `</div>`;
+      resultEl.innerHTML = html;
+
+      // Show controls & favorites
       controlsWrapper.style.display = '';
       hourlyContainer.style.display = 'none';
-
-      // Show the “Add to Favorites” form populated
       if (favForm) {
         favCityField.value    = data.location;
         favCountryField.value = data.country;
@@ -103,18 +113,26 @@ async function initWeatherMap() {
       resultEl.innerHTML = `<div class="alert alert-warning">${err.message}</div>`;
       controlsWrapper.style.display = 'none';
       if (favForm) favForm.style.display = 'none';
+    } finally {
+      hideSpinner();
     }
   }
 
-  // 6) Fetch & display hourly chart via AJAX
+  // Debounced wrapper for map events
+  const debouncedFetchDaily = debounce(fetchDaily, 500);
+
+  /**
+   * Fetch & render the hourly chart.
+   * @param {number} lat
+   * @param {number} lng
+   */
   async function fetchHourly(lat, lng) {
     if (!ctxHourly) return;
-    console.log(`🔄 fetchHourly(${lat}, ${lng})`);
+
     try {
-      const res  = await fetch(
-        `${window.MAP_HOURLY_URL}?lat=${lat}&lng=${lng}`, {
-          credentials: 'same-origin',
-          headers: { 'X-CSRFToken': window.CSRF_TOKEN }
+      const res  = await fetch(`${window.MAP_HOURLY_URL}?lat=${lat}&lng=${lng}`, {
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': window.CSRF_TOKEN }
       });
       const body = await res.json();
       if (body.error) throw new Error(body.error);
@@ -126,16 +144,15 @@ async function initWeatherMap() {
       const temps = body.hourly.map(h => h.temp);
 
       if (hourlyChart) hourlyChart.destroy();
-
       hourlyChart = new Chart(ctxHourly, {
         type: 'line',
-        data: { labels, datasets: [{ label: `Temp (${body.unit})`, data: temps, fill: false, tension: 0.2 }] },
-        options: {
+        data:      { labels, datasets:[{ label:`Temp (${body.unit})`, data:temps, fill:false, tension:0.2 }] },
+        options:   {
           scales: {
-            x: { title: { display: true, text: 'Hour' } },
-            y: { title: { display: true, text: `Temp (${body.unit})` } }
+            x:{ title:{ display:true, text:'Hour' } },
+            y:{ title:{ display:true, text:`Temp (${body.unit})` } }
           },
-          plugins: { legend: { display: false } }
+          plugins:{ legend:{ display:false } }
         }
       });
       hourlyContainer.style.display = '';
@@ -144,25 +161,19 @@ async function initWeatherMap() {
     }
   }
 
-  // 7) Handle form submit: geocode, recenter & fetch
+  // Form submission → geocode → fetchDaily
   form.addEventListener('submit', async e => {
     e.preventDefault();
     const city    = cityInput.value.trim();
     const country = countryInput.value.trim();
-    console.log('📝 form submit:', { city, country });
-    if (!city) {
-      console.warn('No city provided; aborting submit.');
-      return;
-    }
+    if (!city) return;
 
     try {
       const query = encodeURIComponent(city + (country ? ',' + country : ''));
-      console.log(`🔍 Geocoding "${query}"…`);
-      const r   = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
-      const loc = await r.json();
+      const r     = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
+      const loc   = await r.json();
       if (!loc.length) throw new Error('Location not found.');
       const { lat, lon } = loc[0];
-
       map.setView([+lat, +lon], 8);
       marker.setLatLng([+lat, +lon]);
       await fetchDaily(+lat, +lon);
@@ -172,7 +183,7 @@ async function initWeatherMap() {
     }
   });
 
-  // 8) Toggle daily vs hourly
+  // Daily ↔ Hourly toggle
   controlsItems.forEach(item => {
     item.addEventListener('click', e => {
       e.preventDefault();
@@ -189,41 +200,26 @@ async function initWeatherMap() {
     });
   });
 
-  // 9) Map click & marker drag → reload daily forecast
-  map.on('click', e => {
-    fetchDaily(e.latlng.lat, e.latlng.lng);
-    marker.setLatLng(e.latlng);
-  });
+  // Debounced map click & marker drag
+  map.on('click', e => debouncedFetchDaily(e.latlng.lat, e.latlng.lng));
   marker.on('dragend', () => {
     const { lat, lng } = marker.getLatLng();
-    fetchDaily(lat, lng);
+    debouncedFetchDaily(lat, lng);
   });
 
-  // 10) Attempt geolocation (user permission)
+  // Geolocation on load → otherwise initial default search
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(pos => {
-      const { latitude, longitude } = pos.coords;
-      console.log('🌐 Geolocation success:', { latitude, longitude });
-      map.setView([latitude, longitude], 8);
-      marker.setLatLng([latitude, longitude]);
-      fetchDaily(latitude, longitude);
-    }, err => {
-      console.warn('🌐 Geolocation failed:', err);
-    });
+      map.setView([pos.coords.latitude, pos.coords.longitude], 8);
+      marker.setLatLng([pos.coords.latitude, pos.coords.longitude]);
+      fetchDaily(pos.coords.latitude, pos.coords.longitude);
+    }, () => form.dispatchEvent(new Event('submit', { bubbles: true })));
+  } else {
+    form.dispatchEvent(new Event('submit', { bubbles: true }));
   }
-
-  // 11) Always run default-city search to preload forecast
-  function initialSearch() {
-    const defaultCity = cityInput.value.trim();
-    if (defaultCity) {
-      console.log('🏁 initialSearch:', defaultCity);
-      form.dispatchEvent(new Event('submit', { bubbles: true }));
-    }
-  }
-  initialSearch();
 }
 
-// Self‑initialize on DOMContentLoaded
+// Initialize
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initWeatherMap);
 } else {

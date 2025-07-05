@@ -5,7 +5,9 @@
 <section class="container my-5">
   <h2>Interactive Weather Map</h2>
 
-  {# Use a real form so Enter and button both fire our JS #}
+  {# —────────────────────────────────────────────────────────────────────────── #}
+  {# Search form                                                           #}
+  {# —────────────────────────────────────────────────────────────────────────── #}
   <form id="mapSearchForm" class="row gx-2 gy-3 mb-4 align-items-end">
     <div class="col-md-5">
       <label for="cityInput" class="form-label">City</label>
@@ -37,10 +39,23 @@
     </div>
   </form>
 
-  <!-- Map itself -->
+  {# —────────────────────────────────────────────────────────────────────────── #}
+  {# Leaflet Map Container                                                  #}
+  {# —────────────────────────────────────────────────────────────────────────── #}
   <div id="map" style="height:400px;"></div>
 
-  <!-- Forecast toggle (hidden until first fetch) -->
+  {# —────────────────────────────────────────────────────────────────────────── #}
+  {# Spinner shown while fetching daily forecast via AJAX                   #}
+  {# —────────────────────────────────────────────────────────────────────────── #}
+  <div id="weatherSpinner" class="text-center my-3" style="display:none;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading weather…</span>
+    </div>
+  </div>
+
+  {# —────────────────────────────────────────────────────────────────────────── #}
+  {# Daily vs Hourly toggle (hidden until first fetch)                      #}
+  {# —────────────────────────────────────────────────────────────────────────── #}
   <div id="mapForecastControls" class="dropdown my-4" style="display:none;">
     <button
       class="btn btn-primary dropdown-toggle"
@@ -57,10 +72,14 @@
     </ul>
   </div>
 
-  <!-- Daily forecast cards -->
+  {# —────────────────────────────────────────────────────────────────────────── #}
+  {# Daily forecast cards rendered by JS into this container                #}
+  {# —────────────────────────────────────────────────────────────────────────── #}
   <div id="weatherResult" class="mt-3"></div>
 
-  <!-- Hourly chart container -->
+  {# —────────────────────────────────────────────────────────────────────────── #}
+  {# Hourly chart container (hidden until “Hourly” is selected)              #}
+  {# —────────────────────────────────────────────────────────────────────────── #}
   <div
     id="hourlyMapChartContainer"
     style="display:none; margin-top:1rem;"
@@ -70,7 +89,9 @@
   </div>
 
   {% if user.is_authenticated %}
-    <!-- initially hidden; JS will populate & show it -->
+    {# —────────────────────────────────────────────────────────────────────────── #}
+    {# Add to Favorites form (populated & shown by JS)                       #}
+    {# —────────────────────────────────────────────────────────────────────────── #}
     <form
       id="mapAddFavForm"
       method="post"
@@ -89,5 +110,6 @@
 {% endblock %}
 
 {% block extra_js %}
+  {# Chart.js is only needed when rendering hourly charts #}
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}

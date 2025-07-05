@@ -1,19 +1,21 @@
 // File: static/js/dashboard.js
 // ───────────────────────────────────────────────────────────────────────────────
-// Module: Dashboard utilities
+// Module: Dashboard utilities (self‑initializing)
+//
 // Responsibilities:
-//   1. Show a random weather-inspired quote on the home/dashboard page.
-//   2. Wire up the “days to show” slider on the daily forecast cards.
+//   • Display a random weather‑inspired quote in the element with ID "weatherQuote".
+//   • Wire up a slider control (#daySlider) to limit visible daily‑forecast cards.
+//   • Automatically initialize both features on DOMContentLoaded.
+//
 // Usage:
-//   - Imported as a module in base.html and initialized on DOMContentLoaded.
-//   - No global state; pure functions and event handlers.
+//   • Include this as an ES module in base.html after the DOM node with id="weatherQuote":
+//       <script type="module" src="{% static 'js/dashboard.js' %}"></script>
+//   • No additional inline scripts required.
 // ───────────────────────────────────────────────────────────────────────────────
 
-// --- Quote rotation ------------------------------------------------------------
-
 /**
- * A small library of uplifting weather quotes.
- * Feel free to add, remove, or tweak these to change the “personality” of your app.
+ * A collection of uplifting weather‑themed quotes.
+ * Feel free to add, remove, or modify entries for your app’s tone.
  */
 const QUOTES = [
   "Wherever you go, no matter what the weather, always bring your own sunshine.",
@@ -31,29 +33,31 @@ const QUOTES = [
 ];
 
 /**
- * Pick one quote at random and inject it into the element with ID "weatherQuote".
- * @returns {void}
+ * initDashboardQuotes
+ * -------------------
+ * Selects a random quote from QUOTES and injects it into
+ * the DOM element with id="weatherQuote", if present.
  */
 export function initDashboardQuotes() {
   const el = document.getElementById('weatherQuote');
   if (!el) {
-    // No dashboard quote container found; nothing to do.
+    // No quote container on this page; nothing to do.
     return;
   }
-  // Random index in [0, QUOTES.length)
-  const idx = Math.floor(Math.random() * QUOTES.length);
-  el.textContent = QUOTES[idx];
+  const index = Math.floor(Math.random() * QUOTES.length);
+  el.textContent = QUOTES[index];
 }
 
-// --- Forecast slider -----------------------------------------------------------
-
 /**
- * Slider control to limit number of forecast cards shown.
- * - Expects:
- *     <input type="range" id="daySlider" min="1" max="{totalDays}">
- *     <span id="sliderValue"></span>
- *     Cards with class "forecast-day" in order.
- * @returns {void}
+ * initForecastSlider
+ * ------------------
+ * Sets up a <input type="range" id="daySlider"> slider to control
+ * how many elements with class "forecast-day" are visible.
+ *
+ * Expected markup:
+ *   <input id="daySlider" type="range" min="1" max="{totalDays}" value="{totalDays}">
+ *   <span id="sliderValue">{totalDays}</span>
+ *   <div class="forecast-day">…</div>  (one per day)
  */
 export function initForecastSlider() {
   const slider = document.getElementById('daySlider');
@@ -61,34 +65,38 @@ export function initForecastSlider() {
   const cards  = Array.from(document.querySelectorAll('.forecast-day'));
 
   if (!slider || !label || cards.length === 0) {
-    // Required DOM not present (e.g. on non-dashboard pages)
+    // Required elements not present; skip slider setup.
     return;
   }
 
-  /**
-   * Read the slider’s numeric value and show only that many forecast cards.
-   */
+  // Update function: show the first N cards, hide the rest.
   function update() {
     const n = parseInt(slider.value, 10);
-    label.textContent = n;  // live-update the label next to the slider
-    // Show first n cards, hide the rest
+    label.textContent = n;
     cards.forEach((card, i) => {
-      card.style.display = (i < n) ? '' : 'none';
+      card.style.display = i < n ? '' : 'none';
     });
   }
 
-  // Recompute on every input event (slider drag or click)
   slider.addEventListener('input', update);
-  // Initialize to the correct state on load
-  update();
+  update();  // Initialize on load
 }
 
-// --- Module entrypoint ---------------------------------------------------------
-
 /**
- * Automatically invoked on page load. Ties together dashboard features.
+ * initDashboard
+ * -------------
+ * Entry point to initialize dashboard features:
+ *   • initDashboardQuotes
+ *   • initForecastSlider
  */
 export function initDashboard() {
   initDashboardQuotes();
   initForecastSlider();
+}
+
+// Auto‑initialize when the DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initDashboard);
+} else {
+  initDashboard();
 }

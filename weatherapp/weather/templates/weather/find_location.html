@@ -10,7 +10,9 @@
 >
   <h2>Find Weather by Location</h2>
 
-  <!-- Search form -->
+  {# —────────────────────────────────────────────────────────────────────────── #}
+  {# Search form                                                             #}
+  {# —────────────────────────────────────────────────────────────────────────── #}
   <form method="get" class="row gx-2 gy-3 mb-4 align-items-end">
     <div class="col-md-5">
       <label for="city" class="form-label">City</label>
@@ -36,14 +38,23 @@
       >
     </div>
     <div class="col-md-2">
-      <button type="submit" class="btn btn-primary w-100">
-        Find
-      </button>
+      <button type="submit" class="btn btn-primary w-100">Find</button>
     </div>
   </form>
 
   {% if searched %}
-    <!-- Forecast toggle -->
+    {# —────────────────────────────────────────────────────────────────────────── #}
+    {# Spinner shown while fetching hourly data                                #}
+    {# —────────────────────────────────────────────────────────────────────────── #}
+    <div id="findSpinner" class="text-center my-3" style="display:none;">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading forecast…</span>
+      </div>
+    </div>
+
+    {# —────────────────────────────────────────────────────────────────────────── #}
+    {# Daily vs Hourly toggle                                                  #}
+    {# —────────────────────────────────────────────────────────────────────────── #}
     <div class="dropdown mb-3">
       <button
         class="btn btn-primary dropdown-toggle"
@@ -60,7 +71,9 @@
       </ul>
     </div>
 
-    <!-- Daily forecast -->
+    {# —────────────────────────────────────────────────────────────────────────── #}
+    {# Daily forecast cards                                                    #}
+    {# —────────────────────────────────────────────────────────────────────────── #}
     <div id="dailyForecast">
       <hr>
       <h4>Forecast for {{ city_display }}</h4>
@@ -89,6 +102,7 @@
                 {% else %}
                   <strong>{{ day.date }}</strong><br>
                   <img
+                    loading="lazy"
                     src="{% static 'img/weather_icons/' %}{{ day.icon }}"
                     alt="{{ day.description }}"
                     width="48" height="48"
@@ -104,33 +118,20 @@
       </div>
 
       {% if user.is_authenticated %}
-        <!-- Static “Add to Favorites” form – now guaranteed to render -->
-        <form method="post" action="{% url 'add_favorite' %}">
-          {% csrf_token %}
-          <input type="hidden" name="city"    value="{{ city_display }}">
-          <input type="hidden" name="country" value="{{ request.GET.country|upper }}">
-          <button class="btn btn-outline-success mt-3">
-            Add to Favorites
-          </button>
-        </form>
+        {% include 'weather/_favorite_form.html' with city=city_display country=request.GET.country|upper %}
       {% endif %}
     </div>
 
-    <!-- Hourly forecast -->
+    {# —────────────────────────────────────────────────────────────────────────── #}
+    {# Hourly forecast chart                                                    #}
+    {# —────────────────────────────────────────────────────────────────────────── #}
     <div id="hourlyForecast" style="display:none;">
       <hr>
       <h4>Next 24 Hours</h4>
       <canvas id="findHourlyChart" height="80"></canvas>
 
       {% if user.is_authenticated %}
-        <form method="post" action="{% url 'add_favorite' %}">
-          {% csrf_token %}
-          <input type="hidden" name="city"    value="{{ city_display }}">
-          <input type="hidden" name="country" value="{{ request.GET.country|upper }}">
-          <button class="btn btn-outline-success mt-3">
-            Add to Favorites
-          </button>
-        </form>
+        {% include 'weather/_favorite_form.html' with city=city_display country=request.GET.country|upper %}
       {% endif %}
     </div>
   {% endif %}
