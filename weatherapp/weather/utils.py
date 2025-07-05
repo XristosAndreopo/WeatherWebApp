@@ -3,35 +3,33 @@
 """
 weather/utils.py
 
-Utility functions for parsing OpenWeatherMap data and user preferences.
-
-Responsibilities:
-  - ForecastCard: a dataclass representing a single day’s forecast for templating.
-  - get_icon_for_description: map OWM descriptions to local filenames.
-  - parse_daily_forecasts: pick one sample per calendar day (today + next days),
-      using timezone-aware datetimes.
-  - get_user_pref: fetch or create the user's Preference row and unit symbol.
+This module provides utility functions and data structures for:
+  - Parsing and transforming OpenWeatherMap API responses.
+  - Mapping weather descriptions to local icon filenames.
+  - Fetching user preferences (unit, city, country).
 """
 
 from dataclasses import dataclass
 from datetime import datetime, timezone as dt_timezone
-
 from django.utils import timezone
+
 from .constants import ICON_MAP, DEFAULT_ICON
-from .models import Preference  # your app is named "weather"
+from .models import Preference
 
 
 @dataclass
 class ForecastCard:
     """
-    Structured data for a single forecast card in your templates.
-    Attributes:
-      - date: 'YYYY-MM-DD HH:MM' in local time.
-      - description: raw text from the API.
-      - temp: rounded integer temperature.
-      - humidity: integer humidity percent.
-      - icon: filename chosen by get_icon_for_description().
-      - error: non-empty if something went wrong (e.g. no data).
+    Represents a structured forecast object for a single day,
+    used in HTML templates.
+
+    Fields:
+      - date (str): Formatted datetime ('YYYY-MM-DD HH:MM') in local time.
+      - description (str): Weather condition (e.g., 'clear sky').
+      - temp (int | None): Temperature in °C or °F, rounded.
+      - humidity (int | None): Humidity percentage.
+      - icon (str): Icon filename from /static/img/weather_icons/.
+      - error (str): Optional error message for this card.
     """
     date: str = ''
     description: str = ''
@@ -43,31 +41,36 @@ class ForecastCard:
 
 def get_icon_for_description(desc: str) -> str:
     """
-    Map an OpenWeather `description` substring to a local icon filename.
-    Falls back to DEFAULT_ICON if no key matches.
+    Maps a weather description (e.g. 'clear sky') to a local icon filename.
+
+    Args:
+        desc (str): The raw weather description from OpenWeatherMap.
+
+    Returns:
+        str: The corresponding icon filename (e.g. 'clear.png').
+             Falls back to DEFAULT_ICON if no match is found.
     """
-    lower = desc.lower()
+    desc_lower = desc.lower()
     for key, icon in ICON_MAP.items():
-        if key in lower:
+        if key in desc_lower:
             return icon
     return DEFAULT_ICON
 
 
 def parse_daily_forecasts(raw_list: list[dict], days: int = 7) -> list[ForecastCard]:
     """
-    From the 3‑hourly `raw_list` (5‑day forecast), pick one sample per day up to `days`.
-    Always include today’s last available or next future sample, then subsequent days.
+    From a 5-day forecast (3-hour intervals), extract one representative sample per day.
 
-    Algorithm:
-      1. now = current local time (aware) via django.utils.timezone.now()
-      2. Iterate each `item`:
-         a. Convert UNIX timestamp to an aware UTC datetime.
-         b. Convert that UTC datetime into the local timezone.
-         c. Use its date string (YYYY‑MM‑DD) as the grouping key.
-         d. Track the last sample for today, and the first future sample per subsequent day.
-      3. Build results:
-         - Today’s card: prefer future sample, else last‑seen today, else an error card.
-         - Next (days‑1) cards in chronological order.
+    The logic:
+    - Always return today’s forecast as the last sample or the first future sample.
+    - Then return one future sample per day (up to `days` total).
+
+    Args:
+        raw_list (list[dict]): List of raw forecast dicts from OpenWeatherMap.
+        days (int): Number of days to include (default: 7).
+
+    Returns:
+        list[ForecastCard]: A list of ForecastCard objects, one per calendar day.
     """
     now_local = timezone.now()
     today_key = now_local.strftime('%Y-%m-%d')
@@ -76,49 +79,58 @@ def parse_daily_forecasts(raw_list: list[dict], days: int = 7) -> list[ForecastC
     last_today: ForecastCard | None = None
 
     for item in raw_list:
-        # 1) Create an aware UTC datetime from the timestamp
+        # 1. Convert UTC timestamp to timezone-aware datetime
         dt_utc = datetime.fromtimestamp(item['dt'], tz=dt_timezone.utc)
-        # 2) Convert to local timezone (so date grouping matches YOUR TIME_ZONE)
-        dt_local = timezone.localtime(dt_utc)
-        key = dt_local.strftime('%Y-%m-%d')
 
+        # 2. Convert UTC → local timezone (based on Django's TIME_ZONE setting)
+        dt_local = timezone.localtime(dt_utc)
+        date_key = dt_local.strftime('%Y-%m-%d')
+
+        # 3. Build ForecastCard for that 3-hour period
         card = ForecastCard(
             date=dt_local.strftime('%Y-%m-%d %H:%M'),
             description=item['weather'][0]['description'],
             temp=round(item['main']['temp']),
             humidity=item['main']['humidity'],
-            icon=get_icon_for_description(item['weather'][0]['description'])
+            icon=get_icon_for_description(item['weather'][0]['description']),
         )
 
-        if key == today_key:
-            # Keep overwriting so last_today ends up as the latest sample for today
+        # Track latest available today sample
+        if date_key == today_key:
             last_today = card
 
-        # Register the first future sample per date (including today if dt_local > now_local)
-        if key not in by_date and dt_local >= now_local:
-            by_date[key] = card
+        # Store the first available sample for each future day
+        if date_key not in by_date and dt_local >= now_local:
+            by_date[date_key] = card
 
     results: list[ForecastCard] = []
 
-    # --- Today’s card ---
+    # Add today’s forecast (prefer future sample, else fallback)
     if today_key in by_date:
         results.append(by_date.pop(today_key))
     elif last_today:
         results.append(last_today)
     else:
-        results.append(ForecastCard(error='No forecast data for today.'))
+        results.append(ForecastCard(error="No forecast available for today."))
 
-    # --- Subsequent days ---
-    for date_str in sorted(by_date.keys())[: days - 1]:
-        results.append(by_date[date_str])
+    # Add next (days-1) forecasts
+    for future_day in sorted(by_date.keys())[: days - 1]:
+        results.append(by_date[future_day])
 
     return results
 
 
 def get_user_pref(user) -> tuple[Preference, str]:
     """
-    Retrieve or create the user's Preference row.
-    Returns (pref, unit_symbol) where unit_symbol is '°C' or '°F'.
+    Retrieve or initialize the Preference row for a user.
+
+    Args:
+        user (User): The currently authenticated Django user.
+
+    Returns:
+        tuple[Preference, str]: A tuple containing:
+          - The user’s Preference object.
+          - The appropriate unit symbol ('°C' or '°F').
     """
     pref, _ = Preference.objects.get_or_create(user=user)
     symbol = '°F' if pref.default_unit == 'imperial' else '°C'
