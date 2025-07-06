@@ -25,6 +25,11 @@ from .models import FavoriteLocation
 from .services import WeatherService, WeatherAPIError
 from .utils import get_user_pref
 from .forms import SignUpForm
+from django.contrib.auth.views import (
+    PasswordChangeView as DjangoPasswordChangeView,
+    PasswordChangeDoneView as DjangoPasswordChangeDoneView,
+)
+from django.urls import reverse_lazy
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Class-Based Views (for rendering HTML pages)
@@ -330,3 +335,20 @@ def signup_view(request):
         form = SignUpForm()
 
     return render(request, 'weather/signup.html', {'form': form})
+
+class PasswordChangeView(LoginRequiredMixin, DjangoPasswordChangeView):
+    """
+    Renders the password-change form and, on success, redirects to
+    the ‘done’ page and shows a success message.
+    """
+    template_name = 'weather/password_change_form.html'
+    success_url   = reverse_lazy('password_change_done')
+
+    # you can override form_class if you want to customize fields/labels
+
+
+class PasswordChangeDoneView(LoginRequiredMixin, DjangoPasswordChangeDoneView):
+    """
+    Simple confirmation page after password has been changed.
+    """
+    template_name = 'weather/password_change_done.html'

@@ -11,8 +11,17 @@
                 <li class="list-group-item"><strong>Date joined:</strong> {{ user.date_joined|date:"l, d F Y" }}</li>
                 <li class="list-group-item"><strong>Last login:</strong> {{ user.last_login|date:"l, d F Y H:i" }}</li>
             </ul>
+            <div class="d-grid gap-2">
+                <a href="{% url 'password_change' %}"
+                   class="btn btn-outline-primary">
+                  Change Password
+                </a>
+                <a href="{% url 'settings' %}"
+                   class="btn btn-outline-secondary">
+                  Edit Preferences
+                </a>
+            </div>
             <hr>
-            <p class="text-secondary small">This page will soon let you edit your profile and change your password!</p>
         </div>
     </div>
 </div>

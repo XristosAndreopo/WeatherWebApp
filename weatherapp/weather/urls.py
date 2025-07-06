@@ -46,6 +46,12 @@ urlpatterns = [
     path('remove_favorite/<int:favorite_id>/', views.remove_favorite, name='remove_favorite'),
 
     # ───────────────────────────────────────────────────────────────────────────
+    # Change Password
+    # ───────────────────────────────────────────────────────────────────────────
+    path('password_change/', views.PasswordChangeView.as_view(), name='password_change'),
+    path('password_change/done/', views.PasswordChangeDoneView.as_view(), name='password_change_done'),
+
+    # ───────────────────────────────────────────────────────────────────────────
     # Sign‐up
     # ───────────────────────────────────────────────────────────────────────────
     path('signup/', views.signup_view, name='signup'),
@@ -55,4 +61,5 @@ urlpatterns = [
     # ───────────────────────────────────────────────────────────────────────────
     path('login/',                views.login_view,                name='login'),
     path('logout/',               views.logout_view,               name='logout'),
+
 ]
