@@ -12,6 +12,8 @@ Responsibilities:
 """
 
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 
 # ───────────────────────────────────────────────────────────────────────────────
 # Shared widget attributes
@@ -65,3 +67,32 @@ class LocationSearchForm(forms.Form):
                 "Country code must be exactly 2 letters (ISO 2‑letter code)."
             )
         return country
+
+class SignUpForm(UserCreationForm):
+    """
+    Form for creating new users. Extends Django's UserCreationForm
+    by adding an email field.
+    """
+    email = forms.EmailField(
+        required=True,
+        help_text="Required. Enter a valid email address.",
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'autocomplete': 'email',
+            'placeholder': 'you@example.com',
+        })
+    )
+
+    class Meta:
+        model = User
+        fields = ("username", "email", "password1", "password2")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add Bootstrap classes to the inherited fields
+        for field_name in ("username", "password1", "password2"):
+            field = self.fields[field_name]
+            field.widget.attrs.update({
+                'class': 'form-control',
+                'autocomplete': 'off',
+            })

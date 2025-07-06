@@ -46,6 +46,11 @@ urlpatterns = [
     path('remove_favorite/<int:favorite_id>/', views.remove_favorite, name='remove_favorite'),
 
     # ───────────────────────────────────────────────────────────────────────────
+    # Sign‐up
+    # ───────────────────────────────────────────────────────────────────────────
+    path('signup/', views.signup_view, name='signup'),
+
+    # ───────────────────────────────────────────────────────────────────────────
     # Authentication
     # ───────────────────────────────────────────────────────────────────────────
     path('login/',                views.login_view,                name='login'),

@@ -19,12 +19,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout
-
+from django.contrib.auth import login as auth_login
 from .forms import LocationSearchForm
 from .models import FavoriteLocation
 from .services import WeatherService, WeatherAPIError
 from .utils import get_user_pref
-
+from .forms import SignUpForm
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Class-Based Views (for rendering HTML pages)
@@ -308,3 +308,25 @@ def logout_view(request):
     """
     logout(request)
     return redirect('home')
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NEW: Sign‑Up View
+# ─────────────────────────────────────────────────────────────────────────────
+def signup_view(request):
+    """
+    Handle user registration. On success:
+      - Save new User
+      - Log them in
+      - Redirect to home with a success message
+    """
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            auth_login(request, user)  # log the user in
+            messages.success(request, "Account created successfully! You're now logged in.")
+            return redirect('home')
+    else:
+        form = SignUpForm()
+
+    return render(request, 'weather/signup.html', {'form': form})
