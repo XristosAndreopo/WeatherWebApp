@@ -17,7 +17,7 @@ from django.contrib import messages
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth import login, logout
 from django.contrib.auth import login as auth_login
 from .forms import LocationSearchForm
@@ -319,20 +319,18 @@ def logout_view(request):
 # ─────────────────────────────────────────────────────────────────────────────
 def signup_view(request):
     """
-    Handle user registration. On success:
-      - Save new User
-      - Log them in
-      - Redirect to home with a success message
+    Render a sign-up form and create a new user.
+    On successful POST, logs them in, adds a success message, and redirects to home.
     """
     if request.method == 'POST':
-        form = SignUpForm(request.POST)
+        form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            auth_login(request, user)  # log the user in
-            messages.success(request, "Account created successfully! You're now logged in.")
-            return redirect('home')
+            auth_login(request, user)
+            messages.success(request, "Account created — you’re now signed in!")
+            return redirect('home')   # <-- This must run on valid form
     else:
-        form = SignUpForm()
+        form = UserCreationForm()
 
     return render(request, 'weather/signup.html', {'form': form})
 
