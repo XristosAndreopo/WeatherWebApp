@@ -52,6 +52,7 @@ const ThemeManager = (() => {
    */
   function apply(theme) {
     document.documentElement.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', theme);
   }
 
   /**

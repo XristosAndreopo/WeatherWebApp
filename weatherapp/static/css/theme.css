@@ -1,35 +1,42 @@
 /* weatherapp/static/css/theme.css */
 
 /* ———————————————————————————————————————————————— */
-/* Light (default)—no overrides needed */
-/* ———————————————————————————————————————————————— */
-
-/* ———————————————————————————————————————————————— */
 /* Light Dark (softer dark)             */
 /* ———————————————————————————————————————————————— */
+html[data-theme="light-dark"] body,
 body[data-theme="light-dark"] {
     background: #2e2e2e !important;
     color: #dcdcdc !important;
 }
+html[data-theme="light-dark"] body #sidebar,
 body[data-theme="light-dark"] #sidebar,
+html[data-theme="light-dark"] body .card,
 body[data-theme="light-dark"] .card,
+html[data-theme="light-dark"] body .list-group-item,
 body[data-theme="light-dark"] .list-group-item {
     background: #383838 !important;
     color: #dcdcdc !important;
 }
+html[data-theme="light-dark"] body .form-select,
 body[data-theme="light-dark"] .form-select,
+html[data-theme="light-dark"] body .form-control,
 body[data-theme="light-dark"] .form-control,
+html[data-theme="light-dark"] body .btn,
 body[data-theme="light-dark"] .btn {
     background: #383838 !important;
     color: #dcdcdc !important;
     border-color: #555 !important;
 }
+html[data-theme="light-dark"] body footer,
 body[data-theme="light-dark"] footer,
+html[data-theme="light-dark"] body .navbar,
 body[data-theme="light-dark"] .navbar {
     background: #2b2b2b !important;
     color: #dcdcdc !important;
 }
+html[data-theme="light-dark"] body .navbar .navbar-brand,
 body[data-theme="light-dark"] .navbar .navbar-brand,
+html[data-theme="light-dark"] body .navbar .nav-link,
 body[data-theme="light-dark"] .navbar .nav-link {
     color: #dcdcdc !important;
 }
@@ -37,29 +44,40 @@ body[data-theme="light-dark"] .navbar .nav-link {
 /* ———————————————————————————————————————————————— */
 /* Dracula theme                        */
 /* ———————————————————————————————————————————————— */
+html[data-theme="dracula"] body,
 body[data-theme="dracula"] {
     background: #282a36 !important;
     color: #f8f8f2 !important;
 }
+html[data-theme="dracula"] body #sidebar,
 body[data-theme="dracula"] #sidebar,
+html[data-theme="dracula"] body .card,
 body[data-theme="dracula"] .card,
+html[data-theme="dracula"] body .list-group-item,
 body[data-theme="dracula"] .list-group-item {
     background: #44475a !important;
     color: #f8f8f2 !important;
 }
+html[data-theme="dracula"] body .form-select,
 body[data-theme="dracula"] .form-select,
+html[data-theme="dracula"] body .form-control,
 body[data-theme="dracula"] .form-control,
+html[data-theme="dracula"] body .btn,
 body[data-theme="dracula"] .btn {
     background: #44475a !important;
     color: #f8f8f2 !important;
     border-color: #6272a4 !important;
 }
+html[data-theme="dracula"] body footer,
 body[data-theme="dracula"] footer,
+html[data-theme="dracula"] body .navbar,
 body[data-theme="dracula"] .navbar {
     background: #44475a !important;
     color: #f8f8f2 !important;
 }
+html[data-theme="dracula"] body .navbar .navbar-brand,
 body[data-theme="dracula"] .navbar .navbar-brand,
+html[data-theme="dracula"] body .navbar .nav-link,
 body[data-theme="dracula"] .navbar .nav-link {
     color: #f8f8f2 !important;
 }
@@ -67,29 +85,40 @@ body[data-theme="dracula"] .navbar .nav-link {
 /* ———————————————————————————————————————————————— */
 /* High‑Contrast theme                   */
 /* ———————————————————————————————————————————————— */
+html[data-theme="high-contrast"] body,
 body[data-theme="high-contrast"] {
     background: #000 !important;
     color: #fff !important;
 }
+html[data-theme="high-contrast"] body #sidebar,
 body[data-theme="high-contrast"] #sidebar,
+html[data-theme="high-contrast"] body .card,
 body[data-theme="high-contrast"] .card,
+html[data-theme="high-contrast"] body .list-group-item,
 body[data-theme="high-contrast"] .list-group-item {
     background: #000 !important;
     color: #fff !important;
 }
+html[data-theme="high-contrast"] body .form-select,
 body[data-theme="high-contrast"] .form-select,
+html[data-theme="high-contrast"] body .form-control,
 body[data-theme="high-contrast"] .form-control,
+html[data-theme="high-contrast"] body .btn,
 body[data-theme="high-contrast"] .btn {
     background: #000 !important;
     color: #fff !important;
     border-color: #fff !important;
 }
+html[data-theme="high-contrast"] body footer,
 body[data-theme="high-contrast"] footer,
+html[data-theme="high-contrast"] body .navbar,
 body[data-theme="high-contrast"] .navbar {
     background: #000 !important;
     color: #fff !important;
 }
+html[data-theme="high-contrast"] body .navbar .navbar-brand,
 body[data-theme="high-contrast"] .navbar .navbar-brand,
+html[data-theme="high-contrast"] body .navbar .nav-link,
 body[data-theme="high-contrast"] .navbar .nav-link {
     color: #fff !important;
 }
@@ -97,29 +126,40 @@ body[data-theme="high-contrast"] .navbar .nav-link {
 /* ———————————————————————————————————————————————— */
 /* Sepia theme                           */
 /* ———————————————————————————————————————————————— */
+html[data-theme="sepia"] body,
 body[data-theme="sepia"] {
     background: #f4ecd8 !important;
     color: #5b4636 !important;
 }
+html[data-theme="sepia"] body #sidebar,
 body[data-theme="sepia"] #sidebar,
+html[data-theme="sepia"] body .card,
 body[data-theme="sepia"] .card,
+html[data-theme="sepia"] body .list-group-item,
 body[data-theme="sepia"] .list-group-item {
     background: #e4dac0 !important;
     color: #5b4636 !important;
 }
+html[data-theme="sepia"] body .form-select,
 body[data-theme="sepia"] .form-select,
+html[data-theme="sepia"] body .form-control,
 body[data-theme="sepia"] .form-control,
+html[data-theme="sepia"] body .btn,
 body[data-theme="sepia"] .btn {
     background: #e4dac0 !important;
     color: #5b4636 !important;
     border-color: #c5b491 !important;
 }
+html[data-theme="sepia"] body footer,
 body[data-theme="sepia"] footer,
+html[data-theme="sepia"] body .navbar,
 body[data-theme="sepia"] .navbar {
     background: #d4c8a8 !important;
     color: #5b4636 !important;
 }
+html[data-theme="sepia"] body .navbar .navbar-brand,
 body[data-theme="sepia"] .navbar .navbar-brand,
+html[data-theme="sepia"] body .navbar .nav-link,
 body[data-theme="sepia"] .navbar .nav-link {
     color: #5b4636 !important;
 }
