@@ -30,6 +30,12 @@ from django.contrib.auth.views import (
     PasswordChangeDoneView as DjangoPasswordChangeDoneView,
 )
 from django.urls import reverse_lazy
+from django.contrib.auth.views import (
+    PasswordResetView    as DjangoPasswordResetView,
+    PasswordResetDoneView    as DjangoPasswordResetDoneView,
+    PasswordResetConfirmView as DjangoPasswordResetConfirmView,
+    PasswordResetCompleteView as DjangoPasswordResetCompleteView,
+)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Class-Based Views (for rendering HTML pages)
@@ -323,16 +329,20 @@ def signup_view(request):
     On successful POST, logs them in, adds a success message, and redirects to home.
     """
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
             auth_login(request, user)
             messages.success(request, "Account created — you’re now signed in!")
             return redirect('home')   # <-- This must run on valid form
     else:
-        form = UserCreationForm()
+        form = SignUpForm()
 
     return render(request, 'weather/signup.html', {'form': form})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NEW: Change password in profile
+# ─────────────────────────────────────────────────────────────────────────────
 
 class PasswordChangeView(LoginRequiredMixin, DjangoPasswordChangeView):
     """
@@ -350,3 +360,23 @@ class PasswordChangeDoneView(LoginRequiredMixin, DjangoPasswordChangeDoneView):
     Simple confirmation page after password has been changed.
     """
     template_name = 'weather/password_change_done.html'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NEW: Change password in login if forgot
+# ─────────────────────────────────────────────────────────────────────────────
+
+class PasswordResetView(DjangoPasswordResetView):
+    template_name            = 'weather/password_reset_form.html'
+    email_template_name      = 'weather/password_reset_email.html'
+    subject_template_name    = 'weather/password_reset_subject.txt'
+    success_url              = reverse_lazy('password_reset_done')
+
+class PasswordResetDoneView(DjangoPasswordResetDoneView):
+    template_name = 'weather/password_reset_done.html'
+
+class PasswordResetConfirmView(DjangoPasswordResetConfirmView):
+    template_name = 'weather/password_reset_confirm.html'
+    success_url   = reverse_lazy('password_reset_complete')
+
+class PasswordResetCompleteView(DjangoPasswordResetCompleteView):
+    template_name = 'weather/password_reset_complete.html'

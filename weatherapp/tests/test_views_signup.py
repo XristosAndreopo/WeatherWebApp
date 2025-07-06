@@ -16,6 +16,7 @@ class SignUpViewTests(TestCase):
     def test_signup_post_success(self):
         data = {
             'username':  'newuser',
+            'email': 'new@example.com',
             'password1': 'ComplexPass123!',
             'password2': 'ComplexPass123!'
         }
@@ -23,9 +24,11 @@ class SignUpViewTests(TestCase):
         resp = self.client.post(self.url, data)
         # Should return a 302 redirect to home
         self.assertRedirects(resp, reverse('home'))
-        # User created and logged in
-        self.assertTrue(User.objects.filter(username='newuser').exists())
+        # User created with the right email, and logged in
+        user = User.objects.get(username='newuser')
+        self.assertEqual(user.email, 'new@example.com')
         self.assertIn('_auth_user_id', self.client.session)
+
 
     def test_signup_post_password_mismatch(self):
         data = {
